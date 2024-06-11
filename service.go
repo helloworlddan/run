@@ -21,7 +21,22 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 )
+
+type Service struct {
+	server        *http.Server
+	router        *http.ServeMux
+	signals       chan (os.Signal)
+	shutdown      func(s *Service)
+	Configs       map[string]string
+	Clients       map[string]interface{}
+	Name          string
+	Revision      string
+	Port          string
+	Project       string
+	ProjectNumber string
+}
 
 // NewService creates a new Service instance.
 //
@@ -30,11 +45,20 @@ import (
 func NewService() *Service {
 	log.SetFlags(0)
 	s := &Service{
-		Router:  &http.ServeMux{},
+		router:  &http.ServeMux{},
 		server:  &http.Server{},
+		signals: make(chan os.Signal, 1),
 		Configs: make(map[string]string),
 		Clients: make(map[string]interface{}),
 	}
+	signal.Notify(s.signals, syscall.SIGTERM, syscall.SIGINT)
+	s.server.Handler = s.router
+
+	s.Port = os.Getenv("PORT")
+	if s.Port == "" {
+		s.Port = "8080"
+	}
+	s.server.Addr = fmt.Sprintf(":%s", s.Port)
 
 	s.Name = os.Getenv("K_SERVICE")
 	if s.Name == "" {
@@ -44,11 +68,6 @@ func NewService() *Service {
 	s.Revision = os.Getenv("K_REVISION")
 	if s.Revision == "" {
 		s.Revision = "local"
-	}
-
-	s.Port = os.Getenv("PORT")
-	if s.Port == "" {
-		s.Port = "8080"
 	}
 
 	project, err := ProjectID()
@@ -63,37 +82,40 @@ func NewService() *Service {
 	}
 	s.ProjectNumber = projectNumber
 
-	s.server.Addr = fmt.Sprintf(":%s", s.Port)
-	s.server.Handler = s.Router
-
-	s.Signals = make(chan os.Signal, 1)
-	signal.Notify(s.Signals, syscall.SIGTERM, syscall.SIGINT)
-
 	return s
 }
 
-type Service struct {
-	Router        *http.ServeMux
-	server        *http.Server
-	Signals       chan (os.Signal)
-	Configs       map[string]string
-	Clients       map[string]interface{}
-	Name          string
-	Revision      string
-	Port          string
-	Project       string
-	ProjectNumber string
-}
-
 func (s *Service) ListenAndServe() error {
+	go func(s *Service) {
+		sig := <-s.signals
+		s.Noticef(nil, "shutdown initiated by signal: %s", sig)
+
+		// 10 sec Cloud Run timeout
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// User-supplied shutdown
+		s.shutdown(s)
+		s.Notice(nil, "shutdown complete")
+
+		// Gracefully shutdown the server by waiting on existing requests
+		if err := s.server.Shutdown(ctx); err != nil {
+			s.Fatal(nil, err)
+		}
+	}(s)
+
 	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return err
 	}
 	return nil
 }
 
-func (s *Service) Shutdown(ctx context.Context) error {
-	return s.server.Shutdown(ctx)
+func (s *Service) ShutdownFunc(handler func(s *Service)) {
+	s.shutdown = handler
+}
+
+func (s *Service) HandleFunc(pattern string, handler func(w http.ResponseWriter, _ *http.Request)) {
+	s.router.HandleFunc(pattern, handler)
 }
 
 func (s *Service) Notice(r *http.Request, message string) {
