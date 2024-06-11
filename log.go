@@ -10,7 +10,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package run provides a simple way to use Google Cloud Run.
 package run
 
 import (
@@ -18,15 +17,13 @@ import (
 	"log"
 )
 
-// LogEntry represents a log entry.
 type LogEntry struct {
-	// Message is the log message.
-	Message string `json:"message"`
-	// Severity is the severity of the log message.
+	Message  string `json:"message"`
 	Severity string `json:"severity,omitempty"`
-	// Trace is the trace ID of the log message.
+	// Trace is the trace ID of the log message which will be propagated into
+	// Cloud Trace.
 	Trace string `json:"logging.googleapis.com/trace,omitempty"`
-	// Component is the component that generated the log message.
+	// Component is the name of the service or job that produces the log entry.
 	Component string `json:"component,omitempty"`
 }
 
@@ -41,17 +38,14 @@ func (le LogEntry) String() string {
 	return string(jsonBytes)
 }
 
-// Fatal logs a fatal error and exits the program.
 func Fatal(err error) {
 	log.Fatalf("fatal error: %v", err)
 }
 
-// logEntrySeverities returns a list of valid log entry severities.
 func logEntrySeverities() []string {
 	return []string{"INFO", "NOTICE", "ERROR", "DEBUG", "FATAL"}
 }
 
-// isLogEntrySeverity checks if the given severity is a valid log entry severity.
 func isLogEntrySeverity(severity string) bool {
 	for _, elem := range logEntrySeverities() {
 		if elem == severity {

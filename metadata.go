@@ -10,7 +10,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package run provides a simple way to use Google Cloud Run.
 package run
 
 import (

@@ -10,7 +10,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package run provides a simple way to use Google Cloud Run.
 package run
 
 import (
@@ -63,69 +62,49 @@ func NewService() *Service {
 	return s
 }
 
-// Service represents a Cloud Run service.
 type Service struct {
-	// Name is the name of the service.
-	Name string
-	// Revision is the name of the revision.
-	Revision string
-	// Port is the port that the service listens on.
-	Port string
-
-	// Project is the Google Cloud Project ID.
-	Project string
-	// ProjectNumber is the Google Cloud Project Number.
+	Router        *http.ServeMux
+	Configs       map[string]string
+	Clients       map[string]interface{}
+	Name          string
+	Revision      string
+	Port          string
+	Project       string
 	ProjectNumber string
-
-	// Router is the HTTP router for the service.
-	Router *http.ServeMux
-	// Configs is a map of configuration values.
-	Configs map[string]string
-	// Clients is a map of client instances.
-	Clients map[string]interface{}
 }
 
-// Notice logs a NOTICE message.
 func (s *Service) Notice(r *http.Request, message string) {
 	s.Log(r, "NOTICE", message)
 }
 
-// Noticef logs a NOTICE message with formatting.
 func (s *Service) Noticef(r *http.Request, format string, v ...any) {
 	s.Logf(r, "NOTICE", format, v...)
 }
 
-// Info logs an INFO message.
 func (s *Service) Info(r *http.Request, message string) {
 	s.Log(r, "INFO", message)
 }
 
-// Infof logs an INFO message with formatting.
 func (s *Service) Infof(r *http.Request, format string, v ...any) {
 	s.Logf(r, "INFO", format, v...)
 }
 
-// Debug logs a DEBUG message.
 func (s *Service) Debug(r *http.Request, message string) {
 	s.Log(r, "DEBUG", message)
 }
 
-// Debugf logs a DEBUG message with formatting.
 func (s *Service) Debugf(r *http.Request, format string, v ...any) {
 	s.Logf(r, "DEBUG", format, v...)
 }
 
-// Error logs an ERROR message.
 func (s *Service) Error(r *http.Request, err error) {
 	s.Log(r, "ERROR", err.Error())
 }
 
-// Fatal logs a FATAL message and exits the program.
 func (s *Service) Fatal(r *http.Request, err error) {
 	Fatal(err)
 }
 
-// Log logs a message with the specified severity.
 func (s *Service) Log(r *http.Request, severity string, message string) {
 	if !isLogEntrySeverity(severity) {
 		Fatal(fmt.Errorf("unknown severitiy: %s", severity))
@@ -151,7 +130,6 @@ func (s *Service) Log(r *http.Request, severity string, message string) {
 	log.Println(le)
 }
 
-// Logf logs a message with the specified severity and formatting.
 func (s *Service) Logf(r *http.Request, severity string, format string, v ...any) {
 	s.Log(r, severity, fmt.Sprintf(format, v...))
 }
