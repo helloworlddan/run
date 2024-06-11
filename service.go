@@ -13,11 +13,14 @@
 package run
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 )
 
 // NewService creates a new Service instance.
@@ -28,6 +31,7 @@ func NewService() *Service {
 	log.SetFlags(0)
 	s := &Service{
 		Router:  &http.ServeMux{},
+		server:  &http.Server{},
 		Configs: make(map[string]string),
 		Clients: make(map[string]interface{}),
 	}
@@ -59,11 +63,19 @@ func NewService() *Service {
 	}
 	s.ProjectNumber = projectNumber
 
+	s.server.Addr = fmt.Sprintf(":%s", s.Port)
+	s.server.Handler = s.Router
+
+	s.Signals = make(chan os.Signal, 1)
+	signal.Notify(s.Signals, syscall.SIGTERM, syscall.SIGINT)
+
 	return s
 }
 
 type Service struct {
 	Router        *http.ServeMux
+	server        *http.Server
+	Signals       chan (os.Signal)
 	Configs       map[string]string
 	Clients       map[string]interface{}
 	Name          string
@@ -71,6 +83,17 @@ type Service struct {
 	Port          string
 	Project       string
 	ProjectNumber string
+}
+
+func (s *Service) ListenAndServe() error {
+	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		return err
+	}
+	return nil
+}
+
+func (s *Service) Shutdown(ctx context.Context) error {
+	return s.server.Shutdown(ctx)
 }
 
 func (s *Service) Notice(r *http.Request, message string) {
