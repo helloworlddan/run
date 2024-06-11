@@ -52,6 +52,11 @@ func NewService() *Service {
 	}
 	s.server.Handler = s.router
 
+	s.router.HandleFunc("/uptimez", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "OK")
+	})
+
 	s.Port = os.Getenv("PORT")
 	if s.Port == "" {
 		s.Port = "8080"
