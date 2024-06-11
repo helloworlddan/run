@@ -27,8 +27,7 @@ import (
 type Service struct {
 	server        *http.Server
 	router        *http.ServeMux
-	signals       chan (os.Signal)
-	shutdown      func(s *Service)
+	shutdown      func(ctx context.Context, s *Service)
 	Configs       map[string]string
 	Clients       map[string]interface{}
 	Name          string
@@ -47,11 +46,9 @@ func NewService() *Service {
 	s := &Service{
 		router:  &http.ServeMux{},
 		server:  &http.Server{},
-		signals: make(chan os.Signal, 1),
 		Configs: make(map[string]string),
 		Clients: make(map[string]interface{}),
 	}
-	signal.Notify(s.signals, syscall.SIGTERM, syscall.SIGINT)
 	s.server.Handler = s.router
 
 	s.Port = os.Getenv("PORT")
@@ -86,31 +83,40 @@ func NewService() *Service {
 }
 
 func (s *Service) ListenAndServe() error {
-	go func(s *Service) {
-		sig := <-s.signals
-		s.Noticef(nil, "shutdown initiated by signal: %s", sig)
+	errChan := make(chan error, 1)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
-		// 10 sec Cloud Run timeout
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		// User-supplied shutdown
-		s.shutdown(s)
-		s.Notice(nil, "shutdown complete")
-
-		// Gracefully shutdown the server by waiting on existing requests
-		if err := s.server.Shutdown(ctx); err != nil {
-			s.Fatal(nil, err)
+	go func(s *Service, errChan chan<- error) {
+		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			errChan <- err
 		}
-	}(s)
+	}(s, errChan)
 
-	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	select {
+	case err := <-errChan:
 		return err
+	case sig := <-sigChan:
+		s.Noticef(nil, "shutdown initiated by signal: %v", sig)
 	}
+
+	// Cloud Run 10 sec time out
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Gracefully shutdown the http server by waiting on existing requests
+	if err := s.server.Shutdown(ctx); err != nil {
+		s.Fatal(nil, err)
+	}
+
+	// User-supplied shutdown
+	s.shutdown(ctx, s)
+
+	s.Notice(nil, "shutdown complete")
 	return nil
 }
 
-func (s *Service) ShutdownFunc(handler func(s *Service)) {
+func (s *Service) ShutdownFunc(handler func(ctx context.Context, s *Service)) {
 	s.shutdown = handler
 }
 
