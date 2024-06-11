@@ -44,10 +44,11 @@ type Service struct {
 func NewService() *Service {
 	log.SetFlags(0)
 	s := &Service{
-		router:  &http.ServeMux{},
-		server:  &http.Server{},
-		Configs: make(map[string]string),
-		Clients: make(map[string]interface{}),
+		router:   &http.ServeMux{},
+		server:   &http.Server{},
+		shutdown: func(ctx context.Context, s *Service) {},
+		Configs:  make(map[string]string),
+		Clients:  make(map[string]interface{}),
 	}
 	s.server.Handler = s.router
 
