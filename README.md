@@ -10,3 +10,4 @@ on Cloud Run.
 - Implement all available logging severities:
   <https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity>
 - Deal with local develop on GCE, with metadata server available
+- Add examples for both jobs and service to this README
