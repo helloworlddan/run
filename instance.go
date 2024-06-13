@@ -34,75 +34,45 @@ func metadata(path string) (string, error) {
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	defer res.Body.Close()
 
 	raw, err := io.ReadAll(res.Body)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	return strings.TrimSpace(string(raw)), nil
 }
 
 func projectID() (string, error) {
-	project, err := metadata("project/project-id")
-	if err == nil {
-		return project, nil
-	}
-
-	project = os.Getenv("GOOGLE_CLOUD_PROJECT")
+	project := os.Getenv("GOOGLE_CLOUD_PROJECT")
 	if len(project) >= 6 { // ProjectID should be at least 6 chars
 		return project, nil
 	}
 
-	return "", errors.New("unable to read project ID")
+	return metadata("project/project-id")
 }
 
 func projectNumber() (string, error) {
-	project, err := metadata("project/numeric-project-id")
-	if err != nil {
-		return "", err
-	}
-
-	return project, err
+	return metadata("project/numeric-project-id")
 }
 
 func region() (string, error) {
-	region, err := metadata("instance/region")
-	if err != nil {
-		return "", err
-	}
-
-	return region, err
+	return metadata("instance/region")
 }
 
 func instanceID() (string, error) {
-	id, err := metadata("instance/id")
-	if err != nil {
-		return "", err
-	}
-
-	return id, err
+	return metadata("instance/id")
 }
 
 func serviceAccountEmail() (string, error) {
-	email, err := metadata("instance/service-accounts/default/email")
-	if err == nil {
-		return email, err
-	}
-
-	return "", err
+	return metadata("instance/service-accounts/default/email")
 }
 
 func serviceAccountToken() (string, error) {
-	token, err := metadata("instance/service-accounts/default/token")
-	if err == nil {
-		return token, err
-	}
-
-	return "", err
+	return metadata("instance/service-accounts/default/token")
 }
 
 func port() (string, error) {
