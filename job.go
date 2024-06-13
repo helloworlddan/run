@@ -17,15 +17,14 @@ import (
 	"log"
 )
 
+// Job is intended to be instantiated once and kept around to access
+// functionality related to the Cloud Run Job runtime.
 type Job struct {
 	configs map[string]string
 	clients map[string]interface{}
 }
 
 // NewJob creates a new Job instance.
-//
-// The Job instance will be populated with information from the environment variables
-// set by Cloud Run and data available on the GCE metadata server.
 func NewJob() *Job {
 	log.SetFlags(0)
 	j := &Job{
@@ -36,6 +35,7 @@ func NewJob() *Job {
 	return j
 }
 
+// Name returns the name of the job
 func (j *Job) Name() string {
 	name, err := jobName()
 	if err != nil {
@@ -44,6 +44,7 @@ func (j *Job) Name() string {
 	return name
 }
 
+// Execution returns the name of the current execution of the job
 func (j *Job) Execution() string {
 	execution, err := jobExecution()
 	if err != nil {
@@ -52,6 +53,7 @@ func (j *Job) Execution() string {
 	return execution
 }
 
+// TaskIndex returns the task index assigned to the job
 func (j *Job) TaskIndex() int {
 	index, err := jobTaskIndex()
 	if err != nil {
@@ -60,6 +62,7 @@ func (j *Job) TaskIndex() int {
 	return index
 }
 
+// TaskAttempt returns the attempt/retry counter of the task
 func (j *Job) TaskAttempt() int {
 	attempt, err := jobTaskAttempt()
 	if err != nil {
@@ -68,6 +71,7 @@ func (j *Job) TaskAttempt() int {
 	return attempt
 }
 
+// TaskCount returns the total count of tasks
 func (j *Job) TaskCount() int {
 	count, err := jobTaskCount()
 	if err != nil {
@@ -76,6 +80,7 @@ func (j *Job) TaskCount() int {
 	return count
 }
 
+// ProjectID returns the name of the containing Google Cloud project or "local"
 func (j *Job) ProjectID() string {
 	project, err := projectID()
 	if err != nil {
@@ -84,6 +89,8 @@ func (j *Job) ProjectID() string {
 	return project
 }
 
+// ProjectNumber returns the 12-digit project number of the containing Google
+// Cloud project or "000000000000"
 func (j *Job) ProjectNumber() string {
 	number, err := projectNumber()
 	if err != nil {
@@ -92,6 +99,7 @@ func (j *Job) ProjectNumber() string {
 	return number
 }
 
+// Region returns the Google Cloud region in which the job is running or "local"
 func (j *Job) Region() string {
 	region, err := region()
 	if err != nil {
@@ -100,6 +108,8 @@ func (j *Job) Region() string {
 	return region
 }
 
+// ServiceAccountEmail returns the email of the service account assigned to the
+// job
 func (j *Job) ServiceAccountEmail() string {
 	email, err := serviceAccountEmail()
 	if err != nil {
@@ -108,6 +118,8 @@ func (j *Job) ServiceAccountEmail() string {
 	return email
 }
 
+// ServiceAccountToken returns an authentication token for the assigned service
+// account to authorize requests.
 func (j *Job) ServiceAccountToken() string {
 	token, err := serviceAccountToken()
 	if err != nil {
@@ -116,54 +128,71 @@ func (j *Job) ServiceAccountToken() string {
 	return token
 }
 
+// GetConfig retrieves a config value from the store
 func (j *Job) GetConfig(key string) (string, error) {
 	return getConfig(j.configs, key)
 }
 
+// PutConfig puts a config value in the store
 func (j *Job) PutConfig(key string, val string) {
 	putConfig(j.configs, key, val)
 }
 
+// LoadConfig looks up an environment variable puts it in the store and returns
+// it's value
 func (j *Job) LoadConfig(env string) (string, error) {
 	return loadConfig(j.configs, env)
 }
 
+// ListConfigKeys returns a list of all available config keys
 func (j *Job) ListConfig() []string {
-	return listConfig(j.configs)
+	return listConfigKeys(j.configs)
 }
 
+// Notice logs a message with NOTICE severity
 func (j *Job) Notice(message string) {
 	j.Log("NOTICE", message)
 }
 
+// Noticef logs a message with NOTICE severity and message
+// interpolation/formatting
 func (j *Job) Noticef(message string, v ...any) {
 	j.Logf("NOTICE", message, v...)
 }
 
+// Info logs a message with INFO severity
 func (j *Job) Info(message string) {
 	j.Log("INFO", message)
 }
 
+// Infof logs a message with INFO severity and message
+// interpolation/formatting
 func (j *Job) Infof(message string, v ...any) {
 	j.Logf("INFO", message, v...)
 }
 
+// Debug logs a message with DEBUG severity
 func (j *Job) Debug(message string) {
 	j.Log("DEBUG", message)
 }
 
+// Debugf logs a message with DEBUG severity and message
+// interpolation/formatting
 func (j *Job) Debugf(message string, v ...any) {
 	j.Logf("DEBUG", message, v...)
 }
 
+// Error logs a message with ERROR severity
 func (j *Job) Error(err error) {
 	j.Log("ERROR", err.Error())
 }
 
+// Fatal logs a message and terminates the process.
 func (j *Job) Fatal(err error) {
 	Fatal(err)
 }
 
+// Error logs a message
 func (j *Job) Log(severity string, message string) {
 	if !isLogEntrySeverity(severity) {
 		Fatal(fmt.Errorf("unknown severity: %s", severity))
@@ -176,6 +205,7 @@ func (j *Job) Log(severity string, message string) {
 	})
 }
 
+// Noticef logs a message with message interpolation/formatting
 func (j *Job) Logf(severity string, format string, v ...any) {
 	j.Log(severity, fmt.Sprintf(format, v...))
 }

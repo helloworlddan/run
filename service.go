@@ -24,6 +24,8 @@ import (
 	"time"
 )
 
+// Service is intended to be instantiated once and kept around to access
+// functionality related to the Cloud Run Service runtime.
 type Service struct {
 	server   *http.Server
 	router   *http.ServeMux
@@ -33,9 +35,6 @@ type Service struct {
 }
 
 // NewService creates a new Service instance.
-//
-// The Service instance will be populated with information from the environment variables
-// set by Cloud Run.
 func NewService() *Service {
 	log.SetFlags(0)
 	s := &Service{
@@ -47,7 +46,7 @@ func NewService() *Service {
 	}
 	s.server.Handler = s.router
 
-	// Simple uptime check handler
+	// simple uptime check handler
 	s.router.HandleFunc("/uptimez", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "OK")
@@ -56,6 +55,7 @@ func NewService() *Service {
 	return s
 }
 
+// Name returns the name of the service
 func (s *Service) Name() string {
 	name, err := kNativeService()
 	if err != nil {
@@ -64,6 +64,7 @@ func (s *Service) Name() string {
 	return name
 }
 
+// Revision returns the name of the current revision of the service
 func (s *Service) Revision() string {
 	revision, err := kNativeRevision()
 	if err != nil {
@@ -72,6 +73,7 @@ func (s *Service) Revision() string {
 	return revision
 }
 
+// Port returns the assigned port of the service
 func (s *Service) Port() string {
 	port, err := port()
 	if err != nil {
@@ -80,6 +82,7 @@ func (s *Service) Port() string {
 	return port
 }
 
+// ProjectID returns the name of the containing Google Cloud project or "local"
 func (s *Service) ProjectID() string {
 	project, err := projectID()
 	if err != nil {
@@ -88,6 +91,8 @@ func (s *Service) ProjectID() string {
 	return project
 }
 
+// ProjectNumber returns the 12-digit project number of the containing Google
+// Cloud project or "000000000000"
 func (s *Service) ProjectNumber() string {
 	number, err := projectNumber()
 	if err != nil {
@@ -96,6 +101,7 @@ func (s *Service) ProjectNumber() string {
 	return number
 }
 
+// Region returns the Google Cloud region in which the service is running or "local"
 func (s *Service) Region() string {
 	region, err := region()
 	if err != nil {
@@ -104,6 +110,8 @@ func (s *Service) Region() string {
 	return region
 }
 
+// ServiceAccountEmail returns the email of the service account assigned to the
+// service
 func (s *Service) ServiceAccountEmail() string {
 	email, err := serviceAccountEmail()
 	if err != nil {
@@ -112,6 +120,8 @@ func (s *Service) ServiceAccountEmail() string {
 	return email
 }
 
+// ServiceAccountToken returns an authentication token for the assigned service
+// account to authorize requests.
 func (s *Service) ServiceAccountToken() string {
 	token, err := serviceAccountToken()
 	if err != nil {
@@ -120,6 +130,11 @@ func (s *Service) ServiceAccountToken() string {
 	return token
 }
 
+// ListenAndServe starts the HTTP server, listens and serves requests
+//
+// It also traps SIGINT and SIGTERM. Both signals will cause a graceful
+// shutdown of the HTTP server and executes the user supplied
+// `run.ShutdownFunc`.
 func (s *Service) ListenAndServe() error {
 	errChan := make(chan error, 1)
 	sigChan := make(chan os.Signal, 1)
@@ -156,62 +171,84 @@ func (s *Service) ListenAndServe() error {
 	return nil
 }
 
+// ShutdownFunc registers a supplied function to be executed on server shutdown
+//
+// This is useful to run clean up routines, flush caches, drain and terminate
+// connections, etc.
 func (s *Service) ShutdownFunc(handler func(ctx context.Context, s *Service)) {
 	s.shutdown = handler
 }
 
+// HandleFunc registers `http.HandleFunc` to respond to requests
 func (s *Service) HandleFunc(pattern string, handler func(w http.ResponseWriter, _ *http.Request)) {
 	s.router.HandleFunc(pattern, handler)
 }
 
+// GetConfig retrieves a config value from the store
 func (s *Service) GetConfig(key string) (string, error) {
 	return getConfig(s.configs, key)
 }
 
+// PutConfig puts a config value in the store
 func (s *Service) PutConfig(key string, val string) {
 	putConfig(s.configs, key, val)
 }
 
+// LoadConfig looks up an environment variable puts it in the store and returns
+// it's value
 func (s *Service) LoadConfig(env string) (string, error) {
 	return loadConfig(s.configs, env)
 }
 
-func (s *Service) ListConfig() []string {
-	return listConfig(s.configs)
+// ListConfigKeys returns a list of all available config keys
+func (s *Service) ListConfigKeys() []string {
+	return listConfigKeys(s.configs)
 }
 
+// Notice logs a message with NOTICE severity
 func (s *Service) Notice(r *http.Request, message string) {
 	s.Log(r, "NOTICE", message)
 }
 
+// Noticef logs a message with NOTICE severity and message
+// interpolation/formatting
 func (s *Service) Noticef(r *http.Request, format string, v ...any) {
 	s.Logf(r, "NOTICE", format, v...)
 }
 
+// Info logs a message with INFO severity
 func (s *Service) Info(r *http.Request, message string) {
 	s.Log(r, "INFO", message)
 }
 
+// Infof logs a message with INFO severity and message
+// interpolation/formatting
 func (s *Service) Infof(r *http.Request, format string, v ...any) {
 	s.Logf(r, "INFO", format, v...)
 }
 
+// Debug logs a message with DEBUG severity
 func (s *Service) Debug(r *http.Request, message string) {
 	s.Log(r, "DEBUG", message)
 }
 
+// Debugf logs a message with DEBUG severity and message
+// interpolation/formatting
 func (s *Service) Debugf(r *http.Request, format string, v ...any) {
 	s.Logf(r, "DEBUG", format, v...)
 }
 
+// Error logs a message with ERROR severity
 func (s *Service) Error(r *http.Request, err error) {
 	s.Log(r, "ERROR", err.Error())
 }
 
+// Fatal logs a message and terminates the process.
 func (s *Service) Fatal(r *http.Request, err error) {
 	Fatal(err)
 }
 
+// Error logs a message
 func (s *Service) Log(r *http.Request, severity string, message string) {
 	if !isLogEntrySeverity(severity) {
 		Fatal(fmt.Errorf("unknown severitiy: %s", severity))
@@ -237,6 +274,7 @@ func (s *Service) Log(r *http.Request, severity string, message string) {
 	log.Println(le)
 }
 
+// Noticef logs a message with message interpolation/formatting
 func (s *Service) Logf(r *http.Request, severity string, format string, v ...any) {
 	s.Log(r, severity, fmt.Sprintf(format, v...))
 }

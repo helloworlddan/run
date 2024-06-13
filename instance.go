@@ -192,7 +192,7 @@ func loadConfig(config map[string]string, env string) (string, error) {
 	return val, nil
 }
 
-func listConfig(config map[string]string) []string {
+func listConfigKeys(config map[string]string) []string {
 	keys := make([]string, 0, len(config))
 	for key := range config {
 		keys = append(keys, key)
