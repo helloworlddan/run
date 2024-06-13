@@ -5,5 +5,5 @@ on Cloud Run.
 
 ## TODO
 
-- Exposing more from GCE metadata, like SA tokens, etc.
 - Accessing knative spec and exposing config
+- Using generics for common ops like logging and client/caches maps
