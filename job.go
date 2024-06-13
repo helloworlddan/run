@@ -35,6 +35,15 @@ func NewJob() *Job {
 	return j
 }
 
+// ID returns the ID of the serving instance
+func (j *Job) ID() string {
+	id, err := instanceID()
+	if err != nil {
+		id = "00000"
+	}
+	return id
+}
+
 // Name returns the name of the job
 func (j *Job) Name() string {
 	name, err := jobName()

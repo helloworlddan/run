@@ -55,6 +55,15 @@ func NewService() *Service {
 	return s
 }
 
+// ID returns the ID of the serving instance
+func (s *Service) ID() string {
+	id, err := instanceID()
+	if err != nil {
+		id = "00000"
+	}
+	return id
+}
+
 // Name returns the name of the service
 func (s *Service) Name() string {
 	name, err := kNativeService()
@@ -143,6 +152,7 @@ func (s *Service) ListenAndServe() error {
 	s.server.Addr = fmt.Sprintf(":%s", s.Port())
 
 	go func(s *Service, errChan chan<- error) {
+		s.Noticef(nil, "started and listening on port %s", s.Port())
 		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errChan <- err
 		}
@@ -167,7 +177,7 @@ func (s *Service) ListenAndServe() error {
 	// User-supplied shutdown
 	s.shutdown(ctx, s)
 
-	s.Notice(nil, "shutdown complete")
+	s.Info(nil, "shutdown complete")
 	return nil
 }
 
