@@ -25,16 +25,11 @@ import (
 )
 
 type Service struct {
-	server        *http.Server
-	router        *http.ServeMux
-	shutdown      func(ctx context.Context, s *Service)
-	Configs       map[string]string
-	Clients       map[string]interface{}
-	Name          string
-	Revision      string
-	Port          string
-	Project       string
-	ProjectNumber string
+	server   *http.Server
+	router   *http.ServeMux
+	shutdown func(ctx context.Context, s *Service)
+	Configs  map[string]string
+	Clients  map[string]interface{}
 }
 
 // NewService creates a new Service instance.
@@ -52,46 +47,85 @@ func NewService() *Service {
 	}
 	s.server.Handler = s.router
 
+	// Simple uptime check handler
 	s.router.HandleFunc("/uptimez", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "OK")
 	})
 
-	s.Port = os.Getenv("PORT")
-	if s.Port == "" {
-		s.Port = "8080"
-	}
-	s.server.Addr = fmt.Sprintf(":%s", s.Port)
+	return s
+}
 
-	s.Name = os.Getenv("K_SERVICE")
-	if s.Name == "" {
-		s.Name = "local"
+func (s *Service) Name() string {
+	name, err := kNativeService()
+	if err != nil {
+		name = "local"
 	}
+	return name
+}
 
-	s.Revision = os.Getenv("K_REVISION")
-	if s.Revision == "" {
-		s.Revision = "local"
+func (s *Service) Revision() string {
+	revision, err := kNativeRevision()
+	if err != nil {
+		revision = "001"
 	}
+	return revision
+}
 
-	project, err := ProjectID()
+func (s *Service) Port() string {
+	port, err := port()
+	if err != nil {
+		port = "8080"
+	}
+	return port
+}
+
+func (s *Service) ProjectID() string {
+	project, err := projectID()
 	if err != nil {
 		project = "local"
 	}
-	s.Project = project
+	return project
+}
 
-	projectNumber, err := ProjectNumber()
+func (s *Service) ProjectNumber() string {
+	number, err := projectNumber()
 	if err != nil {
-		projectNumber = "local"
+		number = "0000000000"
 	}
-	s.ProjectNumber = projectNumber
+	return number
+}
 
-	return s
+func (s *Service) Region() string {
+	region, err := region()
+	if err != nil {
+		region = "local"
+	}
+	return region
+}
+
+func (s *Service) ServiceAccountEmail() string {
+	email, err := serviceAccountEmail()
+	if err != nil {
+		email = "local"
+	}
+	return email
+}
+
+func (s *Service) ServiceAccountToken() string {
+	token, err := serviceAccountToken()
+	if err != nil {
+		token = "local"
+	}
+	return token
 }
 
 func (s *Service) ListenAndServe() error {
 	errChan := make(chan error, 1)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+
+	s.server.Addr = fmt.Sprintf(":%s", s.Port())
 
 	go func(s *Service, errChan chan<- error) {
 		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -170,7 +204,7 @@ func (s *Service) Log(r *http.Request, severity string, message string) {
 	le := &LogEntry{
 		Message:   message,
 		Severity:  severity,
-		Component: s.Name,
+		Component: s.Name(),
 	}
 
 	if r == nil {
@@ -181,7 +215,7 @@ func (s *Service) Log(r *http.Request, severity string, message string) {
 	traceHeader := r.Header.Get("X-Cloud-Trace-Context")
 	ts := strings.Split(traceHeader, "/")
 	if len(ts) > 0 && len(ts[0]) > 0 {
-		le.Trace = fmt.Sprintf("projects/%s/traces/%s", s.Project, ts[0])
+		le.Trace = fmt.Sprintf("projects/%s/traces/%s", s.ProjectID(), ts[0])
 	}
 
 	log.Println(le)

@@ -15,9 +15,12 @@ package run
 import (
 	"fmt"
 	"log"
-	"os"
-	"strconv"
 )
+
+type Job struct {
+	Configs map[string]string
+	Clients map[string]interface{}
+}
 
 // NewJob creates a new Job instance.
 //
@@ -30,56 +33,87 @@ func NewJob() *Job {
 		Clients: make(map[string]interface{}),
 	}
 
-	j.Name = os.Getenv("CLOUD_RUN_JOB")
-	if j.Name == "" {
-		j.Name = "local"
-	}
-
-	j.Execution = os.Getenv("CLOUD_RUN_EXECUTION")
-	if j.Execution == "" {
-		j.Execution = "local"
-	}
-
-	task, err := strconv.Atoi(os.Getenv("CLOUD_RUN_TASK_INDEX"))
-	if err == nil {
-		j.TaskIndex = task
-	}
-
-	attempt, err := strconv.Atoi(os.Getenv("CLOUD_RUN_TASK_ATTEMPT"))
-	if err == nil {
-		j.TaskAttempt = attempt
-	}
-
-	count, err := strconv.Atoi(os.Getenv("CLOUD_RUN_TASK_COUNT"))
-	if err == nil {
-		j.TaskCount = count
-	}
-
-	project, err := ProjectID()
-	if err != nil {
-		project = "local"
-	}
-	j.Project = project
-
-	projectNumber, err := ProjectNumber()
-	if err != nil {
-		projectNumber = "local"
-	}
-	j.ProjectNumber = projectNumber
-
 	return j
 }
 
-type Job struct {
-	Configs       map[string]string
-	Clients       map[string]interface{}
-	Name          string
-	Execution     string
-	Project       string
-	ProjectNumber string
-	TaskIndex     int
-	TaskAttempt   int
-	TaskCount     int
+func (j *Job) Name() string {
+	name, err := jobName()
+	if err != nil {
+		name = "local"
+	}
+	return name
+}
+
+func (j *Job) Execution() string {
+	execution, err := jobExecution()
+	if err != nil {
+		execution = "local"
+	}
+	return execution
+}
+
+func (j *Job) TaskIndex() int {
+	index, err := jobTaskIndex()
+	if err != nil {
+		index = 0
+	}
+	return index
+}
+
+func (j *Job) TaskAttempt() int {
+	attempt, err := jobTaskAttempt()
+	if err != nil {
+		attempt = 0
+	}
+	return attempt
+}
+
+func (j *Job) TaskCount() int {
+	count, err := jobTaskCount()
+	if err != nil {
+		count = 0
+	}
+	return count
+}
+
+func (j *Job) ProjectID() string {
+	project, err := projectID()
+	if err != nil {
+		project = "local"
+	}
+	return project
+}
+
+func (j *Job) ProjectNumber() string {
+	number, err := projectNumber()
+	if err != nil {
+		number = "0000000000"
+	}
+	return number
+}
+
+func (j *Job) Region() string {
+	region, err := region()
+	if err != nil {
+		region = "local"
+	}
+	return region
+}
+
+func (j *Job) ServiceAccountEmail() string {
+	email, err := serviceAccountEmail()
+	if err != nil {
+		email = "local"
+	}
+	return email
+}
+
+func (j *Job) ServiceAccountToken() string {
+	token, err := serviceAccountToken()
+	if err != nil {
+		token = "local"
+	}
+	return token
 }
 
 func (j *Job) Notice(message string) {
@@ -122,7 +156,7 @@ func (j *Job) Log(severity string, message string) {
 	log.Println(LogEntry{
 		Message:   message,
 		Severity:  severity,
-		Component: j.Name,
+		Component: j.Name(),
 	})
 }
 
