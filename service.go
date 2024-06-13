@@ -67,7 +67,7 @@ func (s *Service) Name() string {
 func (s *Service) Revision() string {
 	revision, err := kNativeRevision()
 	if err != nil {
-		revision = "001"
+		revision = fmt.Sprintf("%s-00001-xxx", s.Name())
 	}
 	return revision
 }
@@ -91,7 +91,7 @@ func (s *Service) ProjectID() string {
 func (s *Service) ProjectNumber() string {
 	number, err := projectNumber()
 	if err != nil {
-		number = "0000000000"
+		number = "000000000000"
 	}
 	return number
 }
@@ -170,6 +170,14 @@ func (s *Service) GetConfig(key string) (string, error) {
 
 func (s *Service) PutConfig(key string, val string) {
 	putConfig(s.configs, key, val)
+}
+
+func (s *Service) LoadConfig(env string) (string, error) {
+	return loadConfig(s.configs, env)
+}
+
+func (s *Service) ListConfig() []string {
+	return listConfig(s.configs)
 }
 
 func (s *Service) Notice(r *http.Request, message string) {

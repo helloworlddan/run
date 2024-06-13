@@ -62,20 +62,29 @@ func projectID() (string, error) {
 
 func projectNumber() (string, error) {
 	project, err := metadata("project/numeric-project-id")
-	if err == nil {
-		return project, err
+	if err != nil {
+		return "", err
 	}
 
-	return "", err
+	return project, err
 }
 
 func region() (string, error) {
 	region, err := metadata("instance/region")
-	if err == nil {
-		return region, err
+	if err != nil {
+		return "", err
 	}
 
-	return "", err
+	return region, err
+}
+
+func instanceID() (string, error) {
+	id, err := metadata("instance/id")
+	if err != nil {
+		return "", err
+	}
+
+	return id, err
 }
 
 func serviceAccountEmail() (string, error) {
@@ -170,4 +179,23 @@ func getConfig(config map[string]string, key string) (string, error) {
 
 func putConfig(config map[string]string, key string, val string) {
 	config[key] = val
+}
+
+func loadConfig(config map[string]string, env string) (string, error) {
+	val := os.Getenv(env)
+	if val == "" {
+		return "", fmt.Errorf("unable to find value for env var: '%s'", env)
+	}
+
+	config[env] = val
+
+	return val, nil
+}
+
+func listConfig(config map[string]string) []string {
+	keys := make([]string, 0, len(config))
+	for key := range config {
+		keys = append(keys, key)
+	}
+	return keys
 }

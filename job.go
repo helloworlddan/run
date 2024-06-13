@@ -87,7 +87,7 @@ func (j *Job) ProjectID() string {
 func (j *Job) ProjectNumber() string {
 	number, err := projectNumber()
 	if err != nil {
-		number = "0000000000"
+		number = "000000000000"
 	}
 	return number
 }
@@ -122,6 +122,14 @@ func (j *Job) GetConfig(key string) (string, error) {
 
 func (j *Job) PutConfig(key string, val string) {
 	putConfig(j.configs, key, val)
+}
+
+func (j *Job) LoadConfig(env string) (string, error) {
+	return loadConfig(j.configs, env)
+}
+
+func (j *Job) ListConfig() []string {
+	return listConfig(j.configs)
 }
 
 func (j *Job) Notice(message string) {
