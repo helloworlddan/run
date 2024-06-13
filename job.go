@@ -18,8 +18,8 @@ import (
 )
 
 type Job struct {
-	Configs map[string]string
-	Clients map[string]interface{}
+	configs map[string]string
+	clients map[string]interface{}
 }
 
 // NewJob creates a new Job instance.
@@ -29,8 +29,8 @@ type Job struct {
 func NewJob() *Job {
 	log.SetFlags(0)
 	j := &Job{
-		Configs: make(map[string]string),
-		Clients: make(map[string]interface{}),
+		configs: make(map[string]string),
+		clients: make(map[string]interface{}),
 	}
 
 	return j
@@ -114,6 +114,14 @@ func (j *Job) ServiceAccountToken() string {
 		token = "local"
 	}
 	return token
+}
+
+func (j *Job) GetConfig(key string) (string, error) {
+	return getConfig(j.configs, key)
+}
+
+func (j *Job) PutConfig(key string, val string) {
+	putConfig(j.configs, key, val)
 }
 
 func (j *Job) Notice(message string) {

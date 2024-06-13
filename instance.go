@@ -159,3 +159,15 @@ func jobTaskCount() (int, error) {
 	}
 	return count, nil
 }
+
+func getConfig(config map[string]string, key string) (string, error) {
+	val, ok := config[key]
+	if !ok {
+		return "", fmt.Errorf("no config found for key: '%s'", key)
+	}
+	return val, nil
+}
+
+func putConfig(config map[string]string, key string, val string) {
+	config[key] = val
+}

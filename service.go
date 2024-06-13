@@ -28,8 +28,8 @@ type Service struct {
 	server   *http.Server
 	router   *http.ServeMux
 	shutdown func(ctx context.Context, s *Service)
-	Configs  map[string]string
-	Clients  map[string]interface{}
+	configs  map[string]string
+	clients  map[string]interface{}
 }
 
 // NewService creates a new Service instance.
@@ -42,8 +42,8 @@ func NewService() *Service {
 		router:   &http.ServeMux{},
 		server:   &http.Server{},
 		shutdown: func(ctx context.Context, s *Service) {},
-		Configs:  make(map[string]string),
-		Clients:  make(map[string]interface{}),
+		configs:  make(map[string]string),
+		clients:  make(map[string]interface{}),
 	}
 	s.server.Handler = s.router
 
@@ -162,6 +162,14 @@ func (s *Service) ShutdownFunc(handler func(ctx context.Context, s *Service)) {
 
 func (s *Service) HandleFunc(pattern string, handler func(w http.ResponseWriter, _ *http.Request)) {
 	s.router.HandleFunc(pattern, handler)
+}
+
+func (s *Service) GetConfig(key string) (string, error) {
+	return getConfig(s.configs, key)
+}
+
+func (s *Service) PutConfig(key string, val string) {
+	putConfig(s.configs, key, val)
 }
 
 func (s *Service) Notice(r *http.Request, message string) {
