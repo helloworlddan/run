@@ -180,7 +180,7 @@ func (s *Service) ShutdownFunc(handler func(ctx context.Context, s *Service)) {
 }
 
 // HandleFunc registers `http.HandleFunc` to respond to requests
-func (s *Service) HandleFunc(pattern string, handler func(w http.ResponseWriter, _ *http.Request)) {
+func (s *Service) HandleFunc(pattern string, handler func(w http.ResponseWriter, r *http.Request)) {
 	s.router.HandleFunc(pattern, handler)
 }
 
