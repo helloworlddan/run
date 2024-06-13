@@ -205,6 +205,21 @@ func (s *Service) ListConfigKeys() []string {
 	return listConfigKeys(s.configs)
 }
 
+// GetClient resolves a client by name from the store
+func (s *Service) GetClient(name string) (any, error) {
+	return getClient(s.clients, name)
+}
+
+// AddClient add a client to the store
+func (s *Service) AddClient(name string, client any) {
+	addClient(s.clients, name, client)
+}
+
+// ListClientNames returns a list of all available clients
+func (s *Service) ListClientNames() []string {
+	return listClientNames(s.clients)
+}
+
 // Notice logs a message with NOTICE severity
 func (s *Service) Notice(r *http.Request, message string) {
 	s.Log(r, "NOTICE", message)

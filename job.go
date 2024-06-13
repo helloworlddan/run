@@ -149,6 +149,21 @@ func (j *Job) ListConfig() []string {
 	return listConfigKeys(j.configs)
 }
 
+// GetClient resolves a client by name from the store
+func (j *Job) GetClient(name string) (any, error) {
+	return getClient(j.clients, name)
+}
+
+// AddClient add a client to the store
+func (j *Job) AddClient(name string, client any) {
+	addClient(j.clients, name, client)
+}
+
+// ListClientNames returns a list of all available clients
+func (j *Job) ListClientNames() []string {
+	return listClientNames(j.clients)
+}
+
 // Notice logs a message with NOTICE severity
 func (j *Job) Notice(message string) {
 	j.Log("NOTICE", message)

@@ -199,3 +199,23 @@ func listConfigKeys(config map[string]string) []string {
 	}
 	return keys
 }
+
+func getClient(clients map[string]any, name string) (any, error) {
+	client, ok := clients[name]
+	if !ok {
+		return "", fmt.Errorf("no client found for name: '%s'", name)
+	}
+	return client, nil
+}
+
+func addClient(clients map[string]any, name string, client any) {
+	clients[name] = client
+}
+
+func listClientNames(clients map[string]any) []string {
+	names := make([]string, 0, len(clients))
+	for name := range clients {
+		names = append(names, name)
+	}
+	return names
+}
