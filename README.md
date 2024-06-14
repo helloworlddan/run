@@ -78,6 +78,7 @@ func main() {
 
 ## TODO
 
+- HTTP client w/ auth tokens
 - Deal with local develop on GCE, with metadata server available
 - Implement all available logging severities:
   <https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity>

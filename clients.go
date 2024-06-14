@@ -12,7 +12,9 @@
 
 package run
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func getClient(clients map[string]any, name string) (any, error) {
 	client, ok := clients[name]

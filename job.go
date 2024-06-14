@@ -14,6 +14,7 @@ package run
 
 import (
 	"log"
+	"net/http"
 )
 
 // Job is intended to be instantiated once and kept around to access
@@ -139,6 +140,11 @@ func (j *Job) ServiceAccountToken() string {
 		token = "local"
 	}
 	return token
+}
+
+// AuthenticatedRequest returns a new http request with an Authorization header
+func (j *Job) AuthenticatedRequest() *http.Request {
+	return authenticatedRequest(j)
 }
 
 // GetConfig retrieves a config value from the store

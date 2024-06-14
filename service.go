@@ -143,6 +143,11 @@ func (s *Service) ServiceAccountToken() string {
 	return token
 }
 
+// AuthenticatedRequest returns a new http request with an Authorization header
+func (s *Service) AuthenticatedRequest() *http.Request {
+	return authenticatedRequest(s)
+}
+
 // ListenAndServe starts the HTTP server, listens and serves requests
 //
 // It also traps SIGINT and SIGTERM. Both signals will cause a graceful

@@ -22,6 +22,17 @@ import (
 	"strings"
 )
 
+type authenticator interface {
+	ServiceAccountToken() string
+}
+
+func authenticatedRequest(instance authenticator) *http.Request {
+	token := instance.ServiceAccountToken()
+	req := &http.Request{}
+	req.Header.Add("Authentication", fmt.Sprintf("bearer: %s", token))
+	return req
+}
+
 func metadata(path string) (string, error) {
 	path = fmt.Sprintf("http://metadata.google.internal/computeMetadata/v1/%s", path)
 
