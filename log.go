@@ -35,7 +35,7 @@ func (le LogEntry) String() string {
 	log.SetFlags(0)
 	jsonBytes, err := json.Marshal(le)
 	if err != nil {
-		Fatal(err)
+		log.Fatalf("fatal error: %v", err)
 	}
 
 	return string(jsonBytes)
