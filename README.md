@@ -46,6 +46,8 @@ func main() {
 package main
 
 import (
+ "net/http"
+
  "cloud.google.com/go/bigquery"
  "github.com/helloworlddan/run"
 )
@@ -53,6 +55,7 @@ import (
 func main() {
  job := run.NewJob()
 
+ // Store config
  job.PutConfig("my.app.key", "some value")
  cfgVal, err := job.GetConfig("my.app.key")
  if err != nil {
@@ -60,6 +63,7 @@ func main() {
  }
  job.Infof("loaded config: %s", cfgVal)
 
+ // Store client
  bqClient, err := bigquery.NewClient()
  if err != nil {
   job.Error(err)
@@ -73,12 +77,20 @@ func main() {
  }
  bqClient2 := clientRef.(*bigquery.Client)
  _ = bqClient2
+
+ // Make service account authenticated requests
+ req := job.AuthenticatedRequest()
+ resp, err := http.DefaultClient.Do(req)
+ if err != nil {
+  job.Error(err)
+ }
+ defer resp.Body.Close()
+ // read response
 }
 ```
 
 ## TODO
 
-- HTTP client w/ auth tokens
 - Deal with local develop on GCE, with metadata server available
 - Implement all available logging severities:
   <https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity>
