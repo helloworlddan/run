@@ -288,6 +288,28 @@ func (s *Service) Debugf(r *http.Request, format string, v ...any) {
 	logf(s, r, "DEBUG", format, v...)
 }
 
+// Alert logs a message with ALERT severity
+func (s *Service) Alert(r *http.Request, message string) {
+	logf(s, r, "ALERT", message)
+}
+
+// Alertf logs a message with ALERT severity and message
+// interpolation/formatting
+func (s *Service) Alertf(r *http.Request, format string, v ...any) {
+	logf(s, r, "ALERT", format, v...)
+}
+
+// Emergency logs a message with EMERGENCY severity
+func (s *Service) Emergency(r *http.Request, message string) {
+	logf(s, r, "EMERGENCY", message)
+}
+
+// Emergencyf logs a message with EMERGENCY severity and message
+// interpolation/formatting
+func (s *Service) Emergencyf(r *http.Request, format string, v ...any) {
+	logf(s, r, "EMERGENCY", format, v...)
+}
+
 // Error logs a message with ERROR severity
 func (s *Service) Error(r *http.Request, err error) {
 	logf(s, r, "ERROR", err.Error())

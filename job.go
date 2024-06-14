@@ -231,6 +231,28 @@ func (j *Job) Debugf(format string, v ...any) {
 	logf(j, nil, "DEBUG", format, v...)
 }
 
+// Alert logs a message with ALERT severity
+func (j *Job) Alert(message string) {
+	logf(j, nil, "ALERT", message)
+}
+
+// Alertf logs a message with ALERT severity and message
+// interpolation/formatting
+func (j *Job) Alertf(format string, v ...any) {
+	logf(j, nil, "ALERT", format, v...)
+}
+
+// Emergency logs a message with EMERGENCY severity
+func (j *Job) Emergency(message string) {
+	logf(j, nil, "EMERGENCY", message)
+}
+
+// Emergencyf logs a message with EMERGENCY severity and message
+// interpolation/formatting
+func (j *Job) Emergencyf(format string, v ...any) {
+	logf(j, nil, "EMERGENCY", format, v...)
+}
+
 // Error logs a message with ERROR severity
 func (j *Job) Error(err error) {
 	logf(j, nil, "ERROR", err.Error())

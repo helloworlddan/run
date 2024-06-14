@@ -75,7 +75,7 @@ func logf(instance logger, r *http.Request, severity string, format string, v ..
 }
 
 func logEntrySeverities() []string {
-	return []string{"DEFAULT", "INFO", "NOTICE", "ERROR", "DEBUG", "FATAL"}
+	return []string{"DEFAULT", "INFO", "NOTICE", "DEBUG", "ERROR", "ALERT", "EMERGENCY", "FATAL"}
 }
 
 func isLogEntrySeverity(severity string) bool {
