@@ -19,7 +19,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -71,6 +70,11 @@ func (s *Service) Name() string {
 		name = "local"
 	}
 	return name
+}
+
+// String returns the name of the service to satisfy fmt.Stringer
+func (s *Service) String() string {
+	return s.Name()
 }
 
 // Revision returns the name of the current revision of the service
@@ -230,76 +234,66 @@ func (s *Service) ListClientNames() []string {
 	return listClientNames(s.clients)
 }
 
+// Log logs a message
+func (s *Service) Log(r *http.Request, severity string, message string) {
+	logf(s, r, severity, message)
+}
+
+// Logf logs a message with message interpolation/formatting
+func (s *Service) Logf(r *http.Request, severity string, format string, v ...any) {
+	logf(s, r, severity, format, v...)
+}
+
+// Default logs a message with DEFAULT severity
+func (s *Service) Default(r *http.Request, message string) {
+	logf(s, r, "DEFAULT", message)
+}
+
+// Defaultf logs a message with DEFAULT severity and message
+// interpolation/formatting
+func (s *Service) Defaultf(r *http.Request, format string, v ...any) {
+	logf(s, r, "DEFAULT", format, v...)
+}
+
 // Notice logs a message with NOTICE severity
 func (s *Service) Notice(r *http.Request, message string) {
-	s.Log(r, "NOTICE", message)
+	logf(s, r, "NOTICE", message)
 }
 
 // Noticef logs a message with NOTICE severity and message
 // interpolation/formatting
 func (s *Service) Noticef(r *http.Request, format string, v ...any) {
-	s.Logf(r, "NOTICE", format, v...)
+	logf(s, r, "NOTICE", format, v...)
 }
 
 // Info logs a message with INFO severity
 func (s *Service) Info(r *http.Request, message string) {
-	s.Log(r, "INFO", message)
+	logf(s, r, "INFO", message)
 }
 
 // Infof logs a message with INFO severity and message
 // interpolation/formatting
 func (s *Service) Infof(r *http.Request, format string, v ...any) {
-	s.Logf(r, "INFO", format, v...)
+	logf(s, r, "INFO", format, v...)
 }
 
 // Debug logs a message with DEBUG severity
 func (s *Service) Debug(r *http.Request, message string) {
-	s.Log(r, "DEBUG", message)
+	logf(s, r, "DEBUG", message)
 }
 
 // Debugf logs a message with DEBUG severity and message
 // interpolation/formatting
 func (s *Service) Debugf(r *http.Request, format string, v ...any) {
-	s.Logf(r, "DEBUG", format, v...)
+	logf(s, r, "DEBUG", format, v...)
 }
 
 // Error logs a message with ERROR severity
 func (s *Service) Error(r *http.Request, err error) {
-	s.Log(r, "ERROR", err.Error())
+	logf(s, r, "ERROR", err.Error())
 }
 
 // Fatal logs a message and terminates the process.
 func (s *Service) Fatal(r *http.Request, err error) {
-	Fatal(err)
-}
-
-// Error logs a message
-func (s *Service) Log(r *http.Request, severity string, message string) {
-	if !isLogEntrySeverity(severity) {
-		Fatal(fmt.Errorf("unknown severitiy: %s", severity))
-	}
-
-	le := &LogEntry{
-		Message:   message,
-		Severity:  severity,
-		Component: s.Name(),
-	}
-
-	if r == nil {
-		log.Println(le)
-		return
-	}
-
-	traceHeader := r.Header.Get("X-Cloud-Trace-Context")
-	ts := strings.Split(traceHeader, "/")
-	if len(ts) > 0 && len(ts[0]) > 0 {
-		le.Trace = fmt.Sprintf("projects/%s/traces/%s", s.ProjectID(), ts[0])
-	}
-
-	log.Println(le)
-}
-
-// Noticef logs a message with message interpolation/formatting
-func (s *Service) Logf(r *http.Request, severity string, format string, v ...any) {
-	s.Log(r, severity, fmt.Sprintf(format, v...))
+	log.Fatalf("fatal error: %v", err)
 }

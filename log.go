@@ -14,7 +14,10 @@ package run
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"net/http"
+	"strings"
 )
 
 type LogEntry struct {
@@ -38,12 +41,41 @@ func (le LogEntry) String() string {
 	return string(jsonBytes)
 }
 
-func Fatal(err error) {
-	log.Fatalf("fatal error: %v", err)
+type logger interface {
+	Name() string
+	ProjectID() string
+}
+
+func logf(instance logger, r *http.Request, severity string, format string, v ...any) {
+	if !isLogEntrySeverity(severity) {
+		// Defaulting to the default
+		severity = "DEFAULT"
+	}
+
+	message := fmt.Sprintf(format, v...)
+
+	le := &LogEntry{
+		Message:   message,
+		Severity:  severity,
+		Component: instance.Name(),
+	}
+
+	if r == nil {
+		log.Println(le)
+		return
+	}
+
+	traceHeader := r.Header.Get("X-Cloud-Trace-Context")
+	ts := strings.Split(traceHeader, "/")
+	if len(ts) > 0 && len(ts[0]) > 0 {
+		le.Trace = fmt.Sprintf("projects/%s/traces/%s", instance.ProjectID(), ts[0])
+	}
+
+	log.Println(le)
 }
 
 func logEntrySeverities() []string {
-	return []string{"INFO", "NOTICE", "ERROR", "DEBUG", "FATAL"}
+	return []string{"DEFAULT", "INFO", "NOTICE", "ERROR", "DEBUG", "FATAL"}
 }
 
 func isLogEntrySeverity(severity string) bool {

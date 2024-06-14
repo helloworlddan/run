@@ -13,7 +13,6 @@
 package run
 
 import (
-	"fmt"
 	"log"
 )
 
@@ -51,6 +50,11 @@ func (j *Job) Name() string {
 		name = "local"
 	}
 	return name
+}
+
+// String returns the name of the service to satisfy fmt.Stringer
+func (j *Job) String() string {
+	return j.Name()
 }
 
 // Execution returns the name of the current execution of the job
@@ -173,63 +177,66 @@ func (j *Job) ListClientNames() []string {
 	return listClientNames(j.clients)
 }
 
+// Log logs a message
+func (j *Job) Log(severity string, message string) {
+	logf(j, nil, severity, message)
+}
+
+// Logf logs a message with message interpolation/formatting
+func (j *Job) Logf(severity string, format string, v ...any) {
+	logf(j, nil, severity, format, v...)
+}
+
+// Default logs a message with DEFAULT severity
+func (j *Job) Default(message string) {
+	logf(j, nil, "DEFAULT", message)
+}
+
+// Defaultf logs a message with DEFAULT severity and message
+// interpolation/formatting
+func (j *Job) Defaultf(format string, v ...any) {
+	logf(j, nil, "DEFAULT", format, v...)
+}
+
 // Notice logs a message with NOTICE severity
 func (j *Job) Notice(message string) {
-	j.Log("NOTICE", message)
+	logf(j, nil, "NOTICE", message)
 }
 
 // Noticef logs a message with NOTICE severity and message
 // interpolation/formatting
-func (j *Job) Noticef(message string, v ...any) {
-	j.Logf("NOTICE", message, v...)
+func (j *Job) Noticef(format string, v ...any) {
+	logf(j, nil, "NOTICE", format, v...)
 }
 
 // Info logs a message with INFO severity
 func (j *Job) Info(message string) {
-	j.Log("INFO", message)
+	logf(j, nil, "INFO", message)
 }
 
 // Infof logs a message with INFO severity and message
 // interpolation/formatting
-func (j *Job) Infof(message string, v ...any) {
-	j.Logf("INFO", message, v...)
+func (j *Job) Infof(format string, v ...any) {
+	logf(j, nil, "INFO", format, v...)
 }
 
 // Debug logs a message with DEBUG severity
 func (j *Job) Debug(message string) {
-	j.Log("DEBUG", message)
+	logf(j, nil, "DEBUG", message)
 }
 
 // Debugf logs a message with DEBUG severity and message
 // interpolation/formatting
-func (j *Job) Debugf(message string, v ...any) {
-	j.Logf("DEBUG", message, v...)
+func (j *Job) Debugf(format string, v ...any) {
+	logf(j, nil, "DEBUG", format, v...)
 }
 
 // Error logs a message with ERROR severity
 func (j *Job) Error(err error) {
-	j.Log("ERROR", err.Error())
+	logf(j, nil, "ERROR", err.Error())
 }
 
 // Fatal logs a message and terminates the process.
 func (j *Job) Fatal(err error) {
-	Fatal(err)
-}
-
-// Error logs a message
-func (j *Job) Log(severity string, message string) {
-	if !isLogEntrySeverity(severity) {
-		Fatal(fmt.Errorf("unknown severity: %s", severity))
-	}
-
-	log.Println(LogEntry{
-		Message:   message,
-		Severity:  severity,
-		Component: j.Name(),
-	})
-}
-
-// Noticef logs a message with message interpolation/formatting
-func (j *Job) Logf(severity string, format string, v ...any) {
-	j.Log(severity, fmt.Sprintf(format, v...))
+	log.Fatalf("fatal error: %v", err)
 }
