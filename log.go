@@ -20,6 +20,11 @@ import (
 	"strings"
 )
 
+type logger interface {
+	Name() string
+	ProjectID() string
+}
+
 type LogEntry struct {
 	Message  string `json:"message"`
 	Severity string `json:"severity,omitempty"`
@@ -41,14 +46,9 @@ func (le LogEntry) String() string {
 	return string(jsonBytes)
 }
 
-type logger interface {
-	Name() string
-	ProjectID() string
-}
-
 func logf(instance logger, r *http.Request, severity string, format string, v ...any) {
 	if !isLogEntrySeverity(severity) {
-		// Defaulting to the default
+		// Defaulting to the default, duh
 		severity = "DEFAULT"
 	}
 

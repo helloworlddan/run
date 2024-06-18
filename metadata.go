@@ -30,6 +30,7 @@ func authenticatedRequest(instance authenticator) *http.Request {
 	token := instance.ServiceAccountToken()
 	req := &http.Request{}
 	req.Header.Add("Authentication", fmt.Sprintf("bearer: %s", token))
+
 	return req
 }
 
