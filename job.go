@@ -144,9 +144,9 @@ func (j *Job) ServiceAccountToken() string {
 	return token
 }
 
-// AuthenticatedRequest returns a new http request with an Authorization header
-func (j *Job) AuthenticatedRequest(ctx context.Context, method string, url string, body io.Reader) (*http.Request, error) {
-	return authenticatedRequest(j, ctx, method, url, body)
+// NewAuthenticatedRequest returns a new http request with an Authorization header
+func (j *Job) NewAuthenticatedRequest(ctx context.Context, method string, url string, body io.Reader) (*http.Request, error) {
+	return newAuthenticatedRequest(j, ctx, method, url, body)
 }
 
 // GetConfig retrieves a config value from the store

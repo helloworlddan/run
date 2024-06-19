@@ -27,7 +27,7 @@ type authenticator interface {
 	ServiceAccountToken() string
 }
 
-func authenticatedRequest(instance authenticator, ctx context.Context, method string, url string, body io.Reader) (*http.Request, error) {
+func newAuthenticatedRequest(instance authenticator, ctx context.Context, method string, url string, body io.Reader) (*http.Request, error) {
 	token := instance.ServiceAccountToken()
 	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {

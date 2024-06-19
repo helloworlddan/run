@@ -20,12 +20,12 @@ import (
 	"testing"
 )
 
-func Test_authenticatedRequest(t *testing.T) {
+func Test_newAuthenticatedRequest(t *testing.T) {
 	service := NewService()
 	ctx := context.Background()
 	method := http.MethodGet
 	url := "https://example.com"
-	req, err := authenticatedRequest(service, ctx, method, url, nil)
+	req, err := newAuthenticatedRequest(service, ctx, method, url, nil)
 	if err != nil {
 		t.Fatal("authenticatedRequest() fails to instantiate request")
 	}
@@ -42,6 +42,14 @@ func Test_authenticatedRequest(t *testing.T) {
 	expect := fmt.Sprintf("bearer: %s", service.ServiceAccountToken())
 	if val[0] != expect {
 		t.Fatal("authenticatedRequest() contains invalid 'Authorization' header")
+	}
+
+	if req.URL.String() != url {
+		t.Fatal("authenticatedRequest() constructed bad URL")
+	}
+
+	if req.Method != method {
+		t.Fatal("authenticatedRequest() constructed bad URL")
 	}
 }
 
