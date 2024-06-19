@@ -92,4 +92,5 @@ func main() {
 ## TODO
 
 - Deal with local develop on GCE, with metadata server available
+- Update example job with call to NewAuthenticatedRequest and new params
 - Accessing knative spec and exposing config
