@@ -16,16 +16,16 @@ import (
 	"fmt"
 )
 
+func addClient(clients map[string]any, name string, client any) {
+	clients[name] = client
+}
+
 func getClient(clients map[string]any, name string) (any, error) {
 	client, ok := clients[name]
 	if !ok {
 		return "", fmt.Errorf("no client found for name: '%s'", name)
 	}
 	return client, nil
-}
-
-func addClient(clients map[string]any, name string, client any) {
-	clients[name] = client
 }
 
 func listClientNames(clients map[string]any) []string {
