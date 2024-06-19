@@ -17,6 +17,10 @@ import (
 	"os"
 )
 
+func putConfig(config map[string]string, key string, val string) {
+	config[key] = val
+}
+
 func getConfig(config map[string]string, key string) (string, error) {
 	val, ok := config[key]
 	if !ok {
@@ -25,8 +29,12 @@ func getConfig(config map[string]string, key string) (string, error) {
 	return val, nil
 }
 
-func putConfig(config map[string]string, key string, val string) {
-	config[key] = val
+func listConfigKeys(config map[string]string) []string {
+	keys := make([]string, 0, len(config))
+	for key := range config {
+		keys = append(keys, key)
+	}
+	return keys
 }
 
 func loadConfig(config map[string]string, env string) (string, error) {
@@ -38,12 +46,4 @@ func loadConfig(config map[string]string, env string) (string, error) {
 	config[env] = val
 
 	return val, nil
-}
-
-func listConfigKeys(config map[string]string) []string {
-	keys := make([]string, 0, len(config))
-	for key := range config {
-		keys = append(keys, key)
-	}
-	return keys
 }

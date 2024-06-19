@@ -14,6 +14,7 @@ package run
 
 import (
 	"net/http"
+	"slices"
 	"testing"
 )
 
@@ -66,5 +67,9 @@ func Test_listClientNames(t *testing.T) {
 	names = listClientNames(clients)
 	if len(names) != 2 {
 		t.Fatalf("listClientNames() failed to read client names correctly")
+	}
+
+	if !slices.Contains(names, testNames[0]) || !slices.Contains(names, testNames[1]) {
+		t.Fatalf("listClientNames() doesn't contain stored client name")
 	}
 }
