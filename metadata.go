@@ -13,6 +13,7 @@
 package run
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -26,12 +27,15 @@ type authenticator interface {
 	ServiceAccountToken() string
 }
 
-func authenticatedRequest(instance authenticator) *http.Request {
+func authenticatedRequest(instance authenticator, ctx context.Context, method string, url string, body io.Reader) (*http.Request, error) {
 	token := instance.ServiceAccountToken()
-	req := &http.Request{}
-	req.Header.Add("Authentication", fmt.Sprintf("bearer: %s", token))
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("bearer: %s", token))
 
-	return req
+	return req, nil
 }
 
 func metadata(path string) (string, error) {

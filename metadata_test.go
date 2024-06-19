@@ -13,10 +13,37 @@
 package run
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"testing"
 )
+
+func Test_authenticatedRequest(t *testing.T) {
+	service := NewService()
+	ctx := context.Background()
+	method := http.MethodGet
+	url := "https://example.com"
+	req, err := authenticatedRequest(service, ctx, method, url, nil)
+	if err != nil {
+		t.Fatal("authenticatedRequest() fails to instantiate request")
+	}
+
+	val, ok := req.Header["Authorization"]
+	if !ok {
+		t.Fatal("authenticatedRequest() contains no 'Authorization' header")
+	}
+
+	if len(val) != 1 {
+		t.Fatal("authenticatedRequest() contains malformed 'Authorization' header")
+	}
+
+	expect := fmt.Sprintf("bearer: %s", service.ServiceAccountToken())
+	if val[0] != expect {
+		t.Fatal("authenticatedRequest() contains invalid 'Authorization' header")
+	}
+}
 
 func Test_port(t *testing.T) {
 	envVarKey := "PORT"

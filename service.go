@@ -15,6 +15,7 @@ package run
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -144,8 +145,8 @@ func (s *Service) ServiceAccountToken() string {
 }
 
 // AuthenticatedRequest returns a new http request with an Authorization header
-func (s *Service) AuthenticatedRequest() *http.Request {
-	return authenticatedRequest(s)
+func (s *Service) AuthenticatedRequest(ctx context.Context, method string, url string, body io.Reader) (*http.Request, error) {
+	return authenticatedRequest(s, ctx, method, url, body)
 }
 
 // ListenAndServe starts the HTTP server, listens and serves requests

@@ -13,6 +13,8 @@
 package run
 
 import (
+	"context"
+	"io"
 	"log"
 	"net/http"
 )
@@ -143,8 +145,8 @@ func (j *Job) ServiceAccountToken() string {
 }
 
 // AuthenticatedRequest returns a new http request with an Authorization header
-func (j *Job) AuthenticatedRequest() *http.Request {
-	return authenticatedRequest(j)
+func (j *Job) AuthenticatedRequest(ctx context.Context, method string, url string, body io.Reader) (*http.Request, error) {
+	return authenticatedRequest(j, ctx, method, url, body)
 }
 
 // GetConfig retrieves a config value from the store
