@@ -75,7 +75,19 @@ func logf(instance logger, r *http.Request, severity string, format string, v ..
 }
 
 func logEntrySeverities() []string {
-	return []string{"DEFAULT", "INFO", "NOTICE", "DEBUG", "ERROR", "ALERT", "EMERGENCY", "FATAL"}
+	// reference: https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#logseverity
+	return []string{
+		"DEFAULT",
+		"DEBUG",
+		"INFO",
+		"NOTICE",
+		"WARNING",
+		"ERROR",
+		"CRITICAL",
+		"ALERT",
+		"EMERGENCY",
+		"FATAL",
+	}
 }
 
 func isLogEntrySeverity(severity string) bool {

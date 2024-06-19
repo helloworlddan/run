@@ -53,6 +53,21 @@ func Test_newAuthenticatedRequest(t *testing.T) {
 	}
 }
 
+func Test_projectID(t *testing.T) {
+	envVarKey := "GOOGLE_CLOUD_PROJECT"
+	envVarVal := "some-valid-project"
+
+	err := os.Setenv(envVarKey, envVarVal)
+	if err != nil {
+		t.Fatalf("unable to test: %v", err)
+	}
+
+	result, err := projectID()
+	if result != envVarVal {
+		t.Fatalf(`projectID() = %s, %v, want %s, error`, result, err, envVarVal)
+	}
+}
+
 func Test_port(t *testing.T) {
 	envVarKey := "PORT"
 	envVarVal := "8081"
