@@ -92,6 +92,4 @@ func main() {
 ## TODO
 
 - Deal with local develop on GCE, with metadata server available
-- Implement all available logging severities:
-  <https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry#LogSeverity>
 - Accessing knative spec and exposing config

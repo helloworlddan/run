@@ -261,15 +261,15 @@ func (s *Service) Defaultf(r *http.Request, format string, v ...any) {
 	logf(s, r, "DEFAULT", format, v...)
 }
 
-// Notice logs a message with NOTICE severity
-func (s *Service) Notice(r *http.Request, message string) {
-	logf(s, r, "NOTICE", message)
+// Debug logs a message with DEBUG severity
+func (s *Service) Debug(r *http.Request, message string) {
+	logf(s, r, "DEBUG", message)
 }
 
-// Noticef logs a message with NOTICE severity and message
+// Debugf logs a message with DEBUG severity and message
 // interpolation/formatting
-func (s *Service) Noticef(r *http.Request, format string, v ...any) {
-	logf(s, r, "NOTICE", format, v...)
+func (s *Service) Debugf(r *http.Request, format string, v ...any) {
+	logf(s, r, "DEBUG", format, v...)
 }
 
 // Info logs a message with INFO severity
@@ -283,15 +283,42 @@ func (s *Service) Infof(r *http.Request, format string, v ...any) {
 	logf(s, r, "INFO", format, v...)
 }
 
-// Debug logs a message with DEBUG severity
-func (s *Service) Debug(r *http.Request, message string) {
-	logf(s, r, "DEBUG", message)
+// Notice logs a message with NOTICE severity
+func (s *Service) Notice(r *http.Request, message string) {
+	logf(s, r, "NOTICE", message)
 }
 
-// Debugf logs a message with DEBUG severity and message
+// Noticef logs a message with NOTICE severity and message
 // interpolation/formatting
-func (s *Service) Debugf(r *http.Request, format string, v ...any) {
-	logf(s, r, "DEBUG", format, v...)
+func (s *Service) Noticef(r *http.Request, format string, v ...any) {
+	logf(s, r, "NOTICE", format, v...)
+}
+
+// Warning logs a message with WARNING severity
+func (s *Service) Warning(r *http.Request, message string) {
+	logf(s, r, "WARNING", message)
+}
+
+// Warningf logs a message with WARNING severity and message
+// interpolation/formatting
+func (s *Service) Warningf(r *http.Request, format string, v ...any) {
+	logf(s, r, "WARNING", format, v...)
+}
+
+// Error logs a message with ERROR severity
+func (s *Service) Error(r *http.Request, err error) {
+	logf(s, r, "ERROR", err.Error())
+}
+
+// Critical logs a message with CRITICAL severity
+func (s *Service) Critical(r *http.Request, message string) {
+	logf(s, r, "CRITICAL", message)
+}
+
+// Criticalf logs a message with CRITICAL severity and message
+// interpolation/formatting
+func (s *Service) Criticalf(r *http.Request, format string, v ...any) {
+	logf(s, r, "CRITICAL", format, v...)
 }
 
 // Alert logs a message with ALERT severity
@@ -314,11 +341,6 @@ func (s *Service) Emergency(r *http.Request, message string) {
 // interpolation/formatting
 func (s *Service) Emergencyf(r *http.Request, format string, v ...any) {
 	logf(s, r, "EMERGENCY", format, v...)
-}
-
-// Error logs a message with ERROR severity
-func (s *Service) Error(r *http.Request, err error) {
-	logf(s, r, "ERROR", err.Error())
 }
 
 // Fatal logs a message and terminates the process.

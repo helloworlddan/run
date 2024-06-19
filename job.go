@@ -206,15 +206,15 @@ func (j *Job) Defaultf(format string, v ...any) {
 	logf(j, nil, "DEFAULT", format, v...)
 }
 
-// Notice logs a message with NOTICE severity
-func (j *Job) Notice(message string) {
-	logf(j, nil, "NOTICE", message)
+// Debug logs a message with DEBUG severity
+func (j *Job) Debug(message string) {
+	logf(j, nil, "DEBUG", message)
 }
 
-// Noticef logs a message with NOTICE severity and message
+// Debugf logs a message with DEBUG severity and message
 // interpolation/formatting
-func (j *Job) Noticef(format string, v ...any) {
-	logf(j, nil, "NOTICE", format, v...)
+func (j *Job) Debugf(format string, v ...any) {
+	logf(j, nil, "DEBUG", format, v...)
 }
 
 // Info logs a message with INFO severity
@@ -228,15 +228,42 @@ func (j *Job) Infof(format string, v ...any) {
 	logf(j, nil, "INFO", format, v...)
 }
 
-// Debug logs a message with DEBUG severity
-func (j *Job) Debug(message string) {
-	logf(j, nil, "DEBUG", message)
+// Notice logs a message with NOTICE severity
+func (j *Job) Notice(message string) {
+	logf(j, nil, "NOTICE", message)
 }
 
-// Debugf logs a message with DEBUG severity and message
+// Noticef logs a message with NOTICE severity and message
 // interpolation/formatting
-func (j *Job) Debugf(format string, v ...any) {
-	logf(j, nil, "DEBUG", format, v...)
+func (j *Job) Noticef(format string, v ...any) {
+	logf(j, nil, "NOTICE", format, v...)
+}
+
+// Warning logs a message with WARNING severity
+func (j *Job) Warning(message string) {
+	logf(j, nil, "WARNING", message)
+}
+
+// Warningf logs a message with WARNING severity and message
+// interpolation/formatting
+func (j *Job) Warningf(format string, v ...any) {
+	logf(j, nil, "WARNING", format, v...)
+}
+
+// Error logs a message with ERROR severity
+func (j *Job) Error(err error) {
+	logf(j, nil, "ERROR", err.Error())
+}
+
+// Critical logs a message with CRITICAL severity
+func (j *Job) Critical(message string) {
+	logf(j, nil, "CRITICAL", message)
+}
+
+// Criticalf logs a message with CRITICAL severity and message
+// interpolation/formatting
+func (j *Job) Criticalf(format string, v ...any) {
+	logf(j, nil, "CRITICAL", format, v...)
 }
 
 // Alert logs a message with ALERT severity
@@ -259,11 +286,6 @@ func (j *Job) Emergency(message string) {
 // interpolation/formatting
 func (j *Job) Emergencyf(format string, v ...any) {
 	logf(j, nil, "EMERGENCY", format, v...)
-}
-
-// Error logs a message with ERROR severity
-func (j *Job) Error(err error) {
-	logf(j, nil, "ERROR", err.Error())
 }
 
 // Fatal logs a message and terminates the process.
