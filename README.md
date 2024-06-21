@@ -46,6 +46,7 @@ func main() {
 package main
 
 import (
+ "context"
  "net/http"
 
  "cloud.google.com/go/bigquery"
@@ -79,7 +80,11 @@ func main() {
  _ = bqClient2
 
  // Make service account authenticated requests
- req := job.AuthenticatedRequest()
+ ctx := context.Background()
+ req, err := job.NewAuthenticatedRequest(ctx, http.MethodGet, "https://example.com", nil)
+ if err != nil {
+  job.Error(err)
+ }
  resp, err := http.DefaultClient.Do(req)
  if err != nil {
   job.Error(err)
@@ -87,10 +92,10 @@ func main() {
  defer resp.Body.Close()
  // read response
 }
+
 ```
 
 ## TODO
 
 - Deal with local develop on GCE, with metadata server available
-- Update example job with call to NewAuthenticatedRequest and new params
 - Accessing knative spec and exposing config
