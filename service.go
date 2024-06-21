@@ -207,7 +207,7 @@ func (s *Service) HandleFunc(pattern string, handler func(w http.ResponseWriter,
 // HandleStatic registers a handle to servie static assets from `path`
 func (s *Service) HandleStatic(pattern string, path string) {
 	handler := http.FileServer(http.Dir(path))
-	s.router.Handle(pattern, handler)
+	s.router.Handle(pattern, http.StripPrefix(pattern, handler))
 }
 
 // GetConfig retrieves a config value from the store
