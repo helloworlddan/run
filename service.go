@@ -17,42 +17,51 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"google.golang.org/grpc"
 )
 
 // Service is intended to be instantiated once and kept around to access
 // functionality related to the Cloud Run Service runtime.
 type Service struct {
-	server   *http.Server
-	router   *http.ServeMux
-	shutdown func(ctx context.Context, s *Service)
-	configs  map[string]string
-	clients  map[string]interface{}
+	httpServer *http.Server
+	httpRouter *http.ServeMux
+	grpcServer *grpc.Server
+	shutdown   func(ctx context.Context, s *Service)
+	configs    map[string]string
+	clients    map[string]interface{}
 }
 
 // NewService creates a new Service instance.
-func NewService() *Service {
+func NewService(opt ...grpc.ServerOption) *Service {
 	log.SetFlags(0)
 	s := &Service{
-		router:   &http.ServeMux{},
-		server:   &http.Server{},
-		shutdown: func(ctx context.Context, s *Service) {},
-		configs:  make(map[string]string),
-		clients:  make(map[string]interface{}),
+		httpRouter: &http.ServeMux{},
+		httpServer: &http.Server{},
+		grpcServer: grpc.NewServer(opt...),
+		shutdown:   func(ctx context.Context, s *Service) {},
+		configs:    make(map[string]string),
+		clients:    make(map[string]interface{}),
 	}
-	s.server.Handler = s.router
+	s.httpServer.Handler = s.httpRouter
 
 	// simple uptime check handler
-	s.router.HandleFunc("/uptimez", func(w http.ResponseWriter, r *http.Request) {
+	s.httpRouter.HandleFunc("/uptimez", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, "OK")
 	})
 
 	return s
+}
+
+func (s *Service) GRPCServer() *grpc.Server {
+	return s.grpcServer
 }
 
 // ID returns the ID of the serving instance
@@ -149,21 +158,24 @@ func (s *Service) NewAuthenticatedRequest(ctx context.Context, method string, ur
 	return newAuthenticatedRequest(s, ctx, method, url, body)
 }
 
-// ListenAndServe starts the HTTP server, listens and serves requests
+// ListenAndServe starts the GRPC server, listens and serves requests
 //
 // It also traps SIGINT and SIGTERM. Both signals will cause a graceful
-// shutdown of the HTTP server and executes the user supplied
+// shutdown of the GRPC server and executes the user supplied
 // `run.ShutdownFunc`.
-func (s *Service) ListenAndServe() error {
+func (s *Service) ListenAndServeGRPC() error {
 	errChan := make(chan error, 1)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
-	s.server.Addr = fmt.Sprintf(":%s", s.Port())
-
 	go func(s *Service, errChan chan<- error) {
 		s.Noticef(nil, "started and listening on port %s", s.Port())
-		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%s", s.Port()))
+		if err != nil {
+			log.Fatalf("failed to listen: %v", err)
+		}
+
+		if err := s.grpcServer.Serve(listener); err != nil && err != grpc.ErrServerStopped {
 			errChan <- err
 		}
 	}(s, errChan)
@@ -180,7 +192,47 @@ func (s *Service) ListenAndServe() error {
 	defer cancel()
 
 	// Gracefully shutdown the http server by waiting on existing requests
-	if err := s.server.Shutdown(ctx); err != nil {
+	s.grpcServer.Stop()
+
+	// User-supplied shutdown
+	s.shutdown(ctx, s)
+
+	s.Info(nil, "shutdown complete")
+	return nil
+}
+
+// ListenAndServe starts the HTTP server, listens and serves requests
+//
+// It also traps SIGINT and SIGTERM. Both signals will cause a graceful
+// shutdown of the HTTP server and executes the user supplied
+// `run.ShutdownFunc`.
+func (s *Service) ListenAndServeHTTP() error {
+	errChan := make(chan error, 1)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+
+	s.httpServer.Addr = fmt.Sprintf(":%s", s.Port())
+
+	go func(s *Service, errChan chan<- error) {
+		s.Noticef(nil, "started and listening on port %s", s.Port())
+		if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			errChan <- err
+		}
+	}(s, errChan)
+
+	select {
+	case err := <-errChan:
+		return err
+	case sig := <-sigChan:
+		s.Noticef(nil, "shutdown initiated by signal: %v", sig)
+	}
+
+	// Cloud Run 10 sec time out
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Gracefully shutdown the http server by waiting on existing requests
+	if err := s.httpServer.Shutdown(ctx); err != nil {
 		s.Fatal(nil, err)
 	}
 
@@ -201,13 +253,13 @@ func (s *Service) ShutdownFunc(handler func(ctx context.Context, s *Service)) {
 
 // HandleFunc registers `http.HandleFunc` to respond to requests
 func (s *Service) HandleFunc(pattern string, handler func(w http.ResponseWriter, r *http.Request)) {
-	s.router.HandleFunc(pattern, handler)
+	s.httpRouter.HandleFunc(pattern, handler)
 }
 
 // HandleStatic registers a handle to servie static assets from `path`
 func (s *Service) HandleStatic(pattern string, path string) {
 	handler := http.FileServer(http.Dir(path))
-	s.router.Handle(pattern, http.StripPrefix(pattern, handler))
+	s.httpRouter.Handle(pattern, http.StripPrefix(pattern, handler))
 }
 
 // GetConfig retrieves a config value from the store
