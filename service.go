@@ -33,7 +33,7 @@ type Service struct {
 	httpServer *http.Server
 	httpRouter *http.ServeMux
 	grpcServer *grpc.Server
-	shutdown   func(ctx context.Context, s *Service)
+	shutdown   func(ctx context.Context)
 	configs    map[string]string
 	clients    map[string]interface{}
 }
@@ -45,7 +45,7 @@ func NewService(opt ...grpc.ServerOption) *Service {
 		httpRouter: &http.ServeMux{},
 		httpServer: &http.Server{},
 		grpcServer: grpc.NewServer(opt...),
-		shutdown:   func(ctx context.Context, s *Service) {},
+		shutdown:   func(ctx context.Context) {},
 		configs:    make(map[string]string),
 		clients:    make(map[string]interface{}),
 	}
@@ -195,7 +195,7 @@ func (s *Service) ListenAndServeGRPC() error {
 	s.grpcServer.Stop()
 
 	// User-supplied shutdown
-	s.shutdown(ctx, s)
+	s.shutdown(ctx)
 
 	s.Info(nil, "shutdown complete")
 	return nil
@@ -237,7 +237,7 @@ func (s *Service) ListenAndServeHTTP() error {
 	}
 
 	// User-supplied shutdown
-	s.shutdown(ctx, s)
+	s.shutdown(ctx)
 
 	s.Info(nil, "shutdown complete")
 	return nil
@@ -247,7 +247,7 @@ func (s *Service) ListenAndServeHTTP() error {
 //
 // This is useful to run clean up routines, flush caches, drain and terminate
 // connections, etc.
-func (s *Service) ShutdownFunc(handler func(ctx context.Context, s *Service)) {
+func (s *Service) ShutdownFunc(handler func(ctx context.Context)) {
 	s.shutdown = handler
 }
 
