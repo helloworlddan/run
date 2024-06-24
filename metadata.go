@@ -95,7 +95,7 @@ func Port() string {
 }
 
 func Name() string {
-	name := KNativeService()
+	name := ServiceName()
 	if name != "local" {
 		return name
 	}
@@ -108,7 +108,7 @@ func Name() string {
 	return "local"
 }
 
-func KNativeService() string {
+func ServiceName() string {
 	name := os.Getenv("K_SERVICE")
 	if name == "" {
 		return "local"
@@ -116,7 +116,7 @@ func KNativeService() string {
 	return name
 }
 
-func KNativeRevision() string {
+func ServiceRevision() string {
 	revision := os.Getenv("K_REVISION")
 	if revision == "" {
 		return fmt.Sprintf("%s-00001-xxx", Name())

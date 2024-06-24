@@ -16,11 +16,13 @@ import (
 	"fmt"
 )
 
-func addClient(clients map[string]any, name string, client any) {
+var clients map[string]any
+
+func AddClient(name string, client any) {
 	clients[name] = client
 }
 
-func getClient(clients map[string]any, name string) (any, error) {
+func GetClient(name string) (any, error) {
 	client, ok := clients[name]
 	if !ok {
 		return "", fmt.Errorf("no client found for name: '%s'", name)
@@ -28,7 +30,7 @@ func getClient(clients map[string]any, name string) (any, error) {
 	return client, nil
 }
 
-func listClientNames(clients map[string]any) []string {
+func ListClientNames() []string {
 	names := make([]string, 0, len(clients))
 	for name := range clients {
 		names = append(names, name)

@@ -20,12 +20,11 @@ import (
 	"testing"
 )
 
-func Test_newAuthenticatedRequest(t *testing.T) {
-	service := NewService()
+func TestNewAuthenticatedRequest(t *testing.T) {
 	ctx := context.Background()
 	method := http.MethodGet
 	url := "https://example.com"
-	req, err := newAuthenticatedRequest(service, ctx, method, url, nil)
+	req, err := NewAuthenticatedRequest(ctx, method, url, nil)
 	if err != nil {
 		t.Fatal("authenticatedRequest() fails to instantiate request")
 	}
@@ -39,7 +38,7 @@ func Test_newAuthenticatedRequest(t *testing.T) {
 		t.Fatal("authenticatedRequest() contains malformed 'Authorization' header")
 	}
 
-	expect := fmt.Sprintf("bearer: %s", service.ServiceAccountToken())
+	expect := fmt.Sprintf("bearer: %s", ServiceAccountToken())
 	if val[0] != expect {
 		t.Fatal("authenticatedRequest() contains invalid 'Authorization' header")
 	}
@@ -53,7 +52,7 @@ func Test_newAuthenticatedRequest(t *testing.T) {
 	}
 }
 
-func Test_projectID(t *testing.T) {
+func TestProjectID(t *testing.T) {
 	envVarKey := "GOOGLE_CLOUD_PROJECT"
 	envVarVal := "some-valid-project"
 
@@ -62,13 +61,13 @@ func Test_projectID(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err := projectID()
+	result := ProjectID()
 	if result != envVarVal {
-		t.Fatalf(`projectID() = %s, %v, want %s, error`, result, err, envVarVal)
+		t.Fatalf(`projectID() = %s, want %s`, result, envVarVal)
 	}
 }
 
-func Test_port(t *testing.T) {
+func TestPort(t *testing.T) {
 	envVarKey := "PORT"
 	envVarVal := "8081"
 
@@ -77,9 +76,9 @@ func Test_port(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err := port()
-	if err == nil {
-		t.Fatalf(`port() = %s, %v, want 0, error`, result, err)
+	result := Port()
+	if result != "8080" {
+		t.Fatalf(`port() = %s, want "8080"`, result)
 	}
 
 	err = os.Setenv(envVarKey, envVarVal)
@@ -87,13 +86,13 @@ func Test_port(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err = port()
-	if result != envVarVal || err != nil {
-		t.Fatalf(`port() = %s, %v, want %s, error`, result, err, envVarVal)
+	result = Port()
+	if result != envVarVal {
+		t.Fatalf(`port() = %s, want %s`, result, envVarVal)
 	}
 }
 
-func Test_kNativeService(t *testing.T) {
+func TestServiceName(t *testing.T) {
 	envVarKey := "K_SERVICE"
 	envVarVal := "service-001"
 
@@ -102,9 +101,9 @@ func Test_kNativeService(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err := kNativeService()
-	if err == nil {
-		t.Fatalf(`kNativeService() = %s, %v, want 0, error`, result, err)
+	result := ServiceName()
+	if result != "local" {
+		t.Fatalf(`KNativeService() = %s, want "local"`, result)
 	}
 
 	err = os.Setenv(envVarKey, envVarVal)
@@ -112,13 +111,13 @@ func Test_kNativeService(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err = kNativeService()
-	if result != envVarVal || err != nil {
-		t.Fatalf(`kNativeService() = %s, %v, want %s, error`, result, err, envVarVal)
+	result = ServiceName()
+	if result != envVarVal {
+		t.Fatalf(`KNativeService() = %s, want %s`, result, envVarVal)
 	}
 }
 
-func Test_kNativeRevision(t *testing.T) {
+func TestServiceRevision(t *testing.T) {
 	envVarKey := "K_REVISION"
 	envVarVal := "revision-001"
 
@@ -127,9 +126,10 @@ func Test_kNativeRevision(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err := kNativeRevision()
-	if err == nil {
-		t.Fatalf(`kNativeRevision() = %s, %v, want 0, error`, result, err)
+	result := ServiceRevision()
+	expected := fmt.Sprintf("%s-00001-xxx", Name())
+	if result != expected {
+		t.Fatalf(`KNativeRevision() = %s, want %s`, result, expected)
 	}
 
 	err = os.Setenv(envVarKey, envVarVal)
@@ -137,13 +137,13 @@ func Test_kNativeRevision(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err = kNativeRevision()
+	result = ServiceRevision()
 	if result != envVarVal || err != nil {
 		t.Fatalf(`kNativeRevision() = %s, %v, want %s, error`, result, err, envVarVal)
 	}
 }
 
-func Test_jobName(t *testing.T) {
+func TestJobName(t *testing.T) {
 	envVarKey := "CLOUD_RUN_JOB"
 	envVarVal := "job-001"
 
@@ -152,9 +152,9 @@ func Test_jobName(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err := jobName()
-	if err == nil {
-		t.Fatalf(`jobName() = %s, %v, want 0, error`, result, err)
+	result := JobName()
+	if result != "local" {
+		t.Fatalf(`JobName() = %s want "local"`, result)
 	}
 
 	err = os.Setenv(envVarKey, envVarVal)
@@ -162,13 +162,13 @@ func Test_jobName(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err = jobName()
-	if result != envVarVal || err != nil {
-		t.Fatalf(`jobName() = %s, %v, want %s, error`, result, err, envVarVal)
+	result = JobName()
+	if result != envVarVal {
+		t.Fatalf(`jobName() = %s, want %s`, result, envVarVal)
 	}
 }
 
-func Test_jobExecution(t *testing.T) {
+func TestJobExecution(t *testing.T) {
 	envVarKey := "CLOUD_RUN_EXECUTION"
 	envVarVal := "job-execution-001"
 
@@ -177,9 +177,9 @@ func Test_jobExecution(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err := jobExecution()
-	if err == nil {
-		t.Fatalf(`jobExecution() = %s, %v, want 0, error`, result, err)
+	result := JobExecution()
+	if result != "local" {
+		t.Fatalf(`JobExecution() = %s, want "local"`, result)
 	}
 
 	err = os.Setenv(envVarKey, envVarVal)
@@ -187,13 +187,13 @@ func Test_jobExecution(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err = jobExecution()
-	if result != envVarVal || err != nil {
-		t.Fatalf(`jobExecution() = %s, %v, want %s, error`, result, err, envVarVal)
+	result = JobExecution()
+	if result != envVarVal {
+		t.Fatalf(`JobExecution() = %s, want %s`, result, envVarVal)
 	}
 }
 
-func Test_jobTaskIndex(t *testing.T) {
+func TestJobTaskIndex(t *testing.T) {
 	envVarKey := "CLOUD_RUN_TASK_INDEX"
 	envVarVal := 12
 
@@ -202,9 +202,10 @@ func Test_jobTaskIndex(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err := jobTaskIndex()
-	if err == nil {
-		t.Fatalf(`jobTaskIndex() = %d, %v, want 0, error`, result, err)
+	result := JobTaskIndex()
+	// NOTE: maybe i want -1 here to indicate a problem?
+	if result != 0 {
+		t.Fatalf(`jobTaskIndex() = %d, want 0`, result)
 	}
 
 	err = os.Setenv(envVarKey, fmt.Sprintf("%d", envVarVal))
@@ -212,13 +213,13 @@ func Test_jobTaskIndex(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err = jobTaskIndex()
-	if result != envVarVal || err != nil {
-		t.Fatalf(`jobTaskIndex() = %d, %v, want %d, error`, result, err, envVarVal)
+	result = JobTaskIndex()
+	if result != envVarVal {
+		t.Fatalf(`JobTaskIndex() = %d, want %d`, result, envVarVal)
 	}
 }
 
-func Test_jobTaskAttempt(t *testing.T) {
+func TestJobTaskAttempt(t *testing.T) {
 	envVarKey := "CLOUD_RUN_TASK_ATTEMPT"
 	envVarVal := 14
 
@@ -227,9 +228,10 @@ func Test_jobTaskAttempt(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err := jobTaskAttempt()
-	if err == nil {
-		t.Fatalf(`jobTaskAttempt() = %d, %v, want 0, error`, result, err)
+	result := JobTaskAttempt()
+	// NOTE: maybe i want -1 here to indicate a problem?
+	if result != 0 {
+		t.Fatalf(`JobTaskAttempt() = %d, want 0`, result)
 	}
 
 	err = os.Setenv(envVarKey, fmt.Sprintf("%d", envVarVal))
@@ -237,13 +239,13 @@ func Test_jobTaskAttempt(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err = jobTaskAttempt()
-	if result != envVarVal || err != nil {
-		t.Fatalf(`jobTaskAttempt() = %d, %v, want %d, error`, result, err, envVarVal)
+	result = JobTaskAttempt()
+	if result != envVarVal {
+		t.Fatalf(`JobTaskAttempt() = %d, want %d`, result, envVarVal)
 	}
 }
 
-func Test_jobTaskCount(t *testing.T) {
+func TestJobTaskCount(t *testing.T) {
 	envVarKey := "CLOUD_RUN_TASK_COUNT"
 	envVarVal := 16
 
@@ -252,9 +254,10 @@ func Test_jobTaskCount(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err := jobTaskCount()
-	if err == nil {
-		t.Fatalf(`jobTaskCount() = %d, %v, want 0, error`, result, err)
+	result := JobTaskCount()
+	// NOTE: maybe i want -1 here to indicate a problem?
+	if result != 0 {
+		t.Fatalf(`JobTaskCount() = %d, want 0`, result)
 	}
 
 	err = os.Setenv(envVarKey, fmt.Sprintf("%d", envVarVal))
@@ -262,8 +265,8 @@ func Test_jobTaskCount(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result, err = jobTaskCount()
-	if result != envVarVal || err != nil {
-		t.Fatalf(`jobTaskCount() = %d, %v, want %d, error`, result, err, envVarVal)
+	result = JobTaskCount()
+	if result != envVarVal {
+		t.Fatalf(`JobTaskCount() = %d, want %d`, result, envVarVal)
 	}
 }

@@ -17,11 +17,13 @@ import (
 	"os"
 )
 
-func putConfig(config map[string]string, key string, val string) {
+var config map[string]string
+
+func PutConfig(key string, val string) {
 	config[key] = val
 }
 
-func getConfig(config map[string]string, key string) (string, error) {
+func GetConfig(key string) (string, error) {
 	val, ok := config[key]
 	if !ok {
 		return "", fmt.Errorf("no config found for key: '%s'", key)
@@ -29,7 +31,7 @@ func getConfig(config map[string]string, key string) (string, error) {
 	return val, nil
 }
 
-func listConfigKeys(config map[string]string) []string {
+func ListConfigKeys() []string {
 	keys := make([]string, 0, len(config))
 	for key := range config {
 		keys = append(keys, key)
@@ -37,7 +39,7 @@ func listConfigKeys(config map[string]string) []string {
 	return keys
 }
 
-func loadConfig(config map[string]string, env string) (string, error) {
+func LoadConfig(env string) (string, error) {
 	val := os.Getenv(env)
 	if val == "" {
 		return "", fmt.Errorf("unable to find value for env var: '%s'", env)

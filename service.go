@@ -33,8 +33,6 @@ type Service struct {
 	httpRouter *http.ServeMux
 	grpcServer *grpc.Server
 	shutdown   func(ctx context.Context)
-	configs    map[string]string
-	clients    map[string]interface{}
 }
 
 // NewService creates a new Service instance.
@@ -45,8 +43,6 @@ func NewService(opt ...grpc.ServerOption) *Service {
 		httpServer: &http.Server{},
 		grpcServer: grpc.NewServer(opt...),
 		shutdown:   func(ctx context.Context) {},
-		configs:    make(map[string]string),
-		clients:    make(map[string]interface{}),
 	}
 	s.httpServer.Handler = s.httpRouter
 
@@ -170,40 +166,4 @@ func (s *Service) HandleFunc(pattern string, handler func(w http.ResponseWriter,
 func (s *Service) HandleStatic(pattern string, path string) {
 	handler := http.FileServer(http.Dir(path))
 	s.httpRouter.Handle(pattern, http.StripPrefix(pattern, handler))
-}
-
-// GetConfig retrieves a config value from the store
-func (s *Service) GetConfig(key string) (string, error) {
-	return getConfig(s.configs, key)
-}
-
-// PutConfig puts a config value in the store
-func (s *Service) PutConfig(key string, val string) {
-	putConfig(s.configs, key, val)
-}
-
-// LoadConfig looks up an environment variable puts it in the store and returns
-// it's value
-func (s *Service) LoadConfig(env string) (string, error) {
-	return loadConfig(s.configs, env)
-}
-
-// ListConfigKeys returns a list of all available config keys
-func (s *Service) ListConfigKeys() []string {
-	return listConfigKeys(s.configs)
-}
-
-// GetClient resolves a client by name from the store
-func (s *Service) GetClient(name string) (any, error) {
-	return getClient(s.clients, name)
-}
-
-// AddClient add a client to the store
-func (s *Service) AddClient(name string, client any) {
-	addClient(s.clients, name, client)
-}
-
-// ListClientNames returns a list of all available clients
-func (s *Service) ListClientNames() []string {
-	return listClientNames(s.clients)
 }

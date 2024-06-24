@@ -18,29 +18,30 @@ import (
 	"testing"
 )
 
-func Test_putConfig(t *testing.T) {
-	config := make(map[string]string)
+func TestPutConfig(t *testing.T) {
+	config = make(map[string]string)
 
-	putConfig(config, "some key", "some val")
+	PutConfig("some key", "some val")
 
 	if len(config) != 1 {
 		t.Fatalf("putConfig() failed to add config correctly")
 	}
+	config = make(map[string]string)
 }
 
-func Test_getConfig(t *testing.T) {
-	config := make(map[string]string)
+func TestGetConfig(t *testing.T) {
+	config = make(map[string]string)
 
 	configKey := "test.config"
 	configVal := "test.config.val"
-	putConfig(config, configKey, configVal)
+	PutConfig(configKey, configVal)
 
-	_, err := getConfig(config, "non-existent")
+	_, err := GetConfig("non-existent")
 	if err == nil {
 		t.Fatalf("getConfig() failed to err on non-existent config")
 	}
 
-	result, err := getConfig(config, configKey)
+	result, err := GetConfig(configKey)
 	if err != nil {
 		t.Fatalf("getConfig() failed to retrieve existing config")
 	}
@@ -48,22 +49,23 @@ func Test_getConfig(t *testing.T) {
 	if result != configVal {
 		t.Fatalf("getConfig() failed to store config correctly")
 	}
+	config = make(map[string]string)
 }
 
-func Test_listConfigKeys(t *testing.T) {
-	config := make(map[string]string)
+func TestListConfigKeys(t *testing.T) {
+	config = make(map[string]string)
 
-	keys := listConfigKeys(config)
+	keys := ListConfigKeys()
 	if len(keys) != 0 {
 		t.Fatalf("listConfigKeys() failed to read config keys correctly")
 	}
 
 	testKeys := []string{"config.A", "config.B"}
 
-	putConfig(config, testKeys[0], "")
-	putConfig(config, testKeys[1], "")
+	PutConfig(testKeys[0], "")
+	PutConfig(testKeys[1], "")
 
-	keys = listConfigKeys(config)
+	keys = ListConfigKeys()
 	if len(keys) != 2 {
 		t.Fatalf("listConfigKeys() failed to read config keys correctly")
 	}
@@ -71,10 +73,11 @@ func Test_listConfigKeys(t *testing.T) {
 	if !slices.Contains(keys, testKeys[0]) || !slices.Contains(keys, testKeys[1]) {
 		t.Fatalf("listClientNames() doesn't contain stored config key")
 	}
+	config = make(map[string]string)
 }
 
-func Test_loadConfig(t *testing.T) {
-	config := make(map[string]string)
+func TestLoadConfig(t *testing.T) {
+	config = make(map[string]string)
 
 	envVarKey := "some-test-key"
 	envVarVal := "some-test-val"
@@ -83,12 +86,12 @@ func Test_loadConfig(t *testing.T) {
 		t.Fatalf("loadConfig() failed to test: %v", err)
 	}
 
-	_, err = loadConfig(config, "non-existent-key")
+	_, err = LoadConfig("non-existent-key")
 	if err == nil {
 		t.Fatal("loadConfig() didn't error on non-existent key")
 	}
 
-	result, err := loadConfig(config, envVarKey)
+	result, err := LoadConfig(envVarKey)
 	if err != nil {
 		t.Fatalf("loadConfig() failed to retrieve key: %v", err)
 	}
@@ -104,4 +107,5 @@ func Test_loadConfig(t *testing.T) {
 	if config[envVarKey] != envVarVal {
 		t.Fatal("loadConfig() stored config incorrectly")
 	}
+	config = make(map[string]string)
 }
