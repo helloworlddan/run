@@ -15,7 +15,6 @@ package run
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"net/http"
@@ -64,98 +63,9 @@ func (s *Service) GRPCServer() *grpc.Server {
 	return s.grpcServer
 }
 
-// ID returns the ID of the serving instance
-func (s *Service) ID() string {
-	id, err := instanceID()
-	if err != nil {
-		id = "00000"
-	}
-	return id
-}
-
-// Name returns the name of the service
-func (s *Service) Name() string {
-	name, err := kNativeService()
-	if err != nil {
-		name = "local"
-	}
-	return name
-}
-
 // String returns the name of the service to satisfy fmt.Stringer
 func (s *Service) String() string {
-	return s.Name()
-}
-
-// Revision returns the name of the current revision of the service
-func (s *Service) Revision() string {
-	revision, err := kNativeRevision()
-	if err != nil {
-		revision = fmt.Sprintf("%s-00001-xxx", s.Name())
-	}
-	return revision
-}
-
-// Port returns the assigned port of the service
-func (s *Service) Port() string {
-	port, err := port()
-	if err != nil {
-		port = "8080"
-	}
-	return port
-}
-
-// ProjectID returns the name of the containing Google Cloud project or "local"
-func (s *Service) ProjectID() string {
-	project, err := projectID()
-	if err != nil {
-		project = "local"
-	}
-	return project
-}
-
-// ProjectNumber returns the 12-digit project number of the containing Google
-// Cloud project or "000000000000"
-func (s *Service) ProjectNumber() string {
-	number, err := projectNumber()
-	if err != nil {
-		number = "000000000000"
-	}
-	return number
-}
-
-// Region returns the Google Cloud region in which the service is running or "local"
-func (s *Service) Region() string {
-	region, err := region()
-	if err != nil {
-		region = "local"
-	}
-	return region
-}
-
-// ServiceAccountEmail returns the email of the service account assigned to the
-// service
-func (s *Service) ServiceAccountEmail() string {
-	email, err := serviceAccountEmail()
-	if err != nil {
-		email = "local"
-	}
-	return email
-}
-
-// ServiceAccountToken returns an authentication token for the assigned service
-// account to authorize requests.
-func (s *Service) ServiceAccountToken() string {
-	token, err := serviceAccountToken()
-	if err != nil {
-		token = "local"
-	}
-	return token
-}
-
-// NewAuthenticatedRequest returns a new http request with an Authorization header
-func (s *Service) NewAuthenticatedRequest(ctx context.Context, method string, url string, body io.Reader) (*http.Request, error) {
-	return newAuthenticatedRequest(s, ctx, method, url, body)
+	return Name()
 }
 
 // ListenAndServe starts the GRPC server, listens and serves requests
@@ -169,8 +79,8 @@ func (s *Service) ListenAndServeGRPC() error {
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
 	go func(s *Service, errChan chan<- error) {
-		s.Noticef(nil, "started and listening on port %s", s.Port())
-		listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%s", s.Port()))
+		Noticef(nil, "started and listening on port %s", Port())
+		listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%s", Port()))
 		if err != nil {
 			log.Fatalf("failed to listen: %v", err)
 		}
@@ -184,7 +94,7 @@ func (s *Service) ListenAndServeGRPC() error {
 	case err := <-errChan:
 		return err
 	case sig := <-sigChan:
-		s.Noticef(nil, "shutdown initiated by signal: %v", sig)
+		Noticef(nil, "shutdown initiated by signal: %v", sig)
 	}
 
 	// Cloud Run 10 sec time out
@@ -197,7 +107,7 @@ func (s *Service) ListenAndServeGRPC() error {
 	// User-supplied shutdown
 	s.shutdown(ctx)
 
-	s.Info(nil, "shutdown complete")
+	Info(nil, "shutdown complete")
 	return nil
 }
 
@@ -211,10 +121,10 @@ func (s *Service) ListenAndServeHTTP() error {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
-	s.httpServer.Addr = fmt.Sprintf(":%s", s.Port())
+	s.httpServer.Addr = fmt.Sprintf(":%s", Port())
 
 	go func(s *Service, errChan chan<- error) {
-		s.Noticef(nil, "started and listening on port %s", s.Port())
+		Noticef(nil, "started and listening on port %s", Port())
 		if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errChan <- err
 		}
@@ -224,7 +134,7 @@ func (s *Service) ListenAndServeHTTP() error {
 	case err := <-errChan:
 		return err
 	case sig := <-sigChan:
-		s.Noticef(nil, "shutdown initiated by signal: %v", sig)
+		Noticef(nil, "shutdown initiated by signal: %v", sig)
 	}
 
 	// Cloud Run 10 sec time out
@@ -233,13 +143,13 @@ func (s *Service) ListenAndServeHTTP() error {
 
 	// Gracefully shutdown the http server by waiting on existing requests
 	if err := s.httpServer.Shutdown(ctx); err != nil {
-		s.Fatal(nil, err)
+		Fatal(nil, err)
 	}
 
 	// User-supplied shutdown
 	s.shutdown(ctx)
 
-	s.Info(nil, "shutdown complete")
+	Info(nil, "shutdown complete")
 	return nil
 }
 
@@ -296,112 +206,4 @@ func (s *Service) AddClient(name string, client any) {
 // ListClientNames returns a list of all available clients
 func (s *Service) ListClientNames() []string {
 	return listClientNames(s.clients)
-}
-
-// Log logs a message
-func (s *Service) Log(r *http.Request, severity string, message string) {
-	logf(s, r, severity, message)
-}
-
-// Logf logs a message with message interpolation/formatting
-func (s *Service) Logf(r *http.Request, severity string, format string, v ...any) {
-	logf(s, r, severity, format, v...)
-}
-
-// Default logs a message with DEFAULT severity
-func (s *Service) Default(r *http.Request, message string) {
-	logf(s, r, "DEFAULT", message)
-}
-
-// Defaultf logs a message with DEFAULT severity and message
-// interpolation/formatting
-func (s *Service) Defaultf(r *http.Request, format string, v ...any) {
-	logf(s, r, "DEFAULT", format, v...)
-}
-
-// Debug logs a message with DEBUG severity
-func (s *Service) Debug(r *http.Request, message string) {
-	logf(s, r, "DEBUG", message)
-}
-
-// Debugf logs a message with DEBUG severity and message
-// interpolation/formatting
-func (s *Service) Debugf(r *http.Request, format string, v ...any) {
-	logf(s, r, "DEBUG", format, v...)
-}
-
-// Info logs a message with INFO severity
-func (s *Service) Info(r *http.Request, message string) {
-	logf(s, r, "INFO", message)
-}
-
-// Infof logs a message with INFO severity and message
-// interpolation/formatting
-func (s *Service) Infof(r *http.Request, format string, v ...any) {
-	logf(s, r, "INFO", format, v...)
-}
-
-// Notice logs a message with NOTICE severity
-func (s *Service) Notice(r *http.Request, message string) {
-	logf(s, r, "NOTICE", message)
-}
-
-// Noticef logs a message with NOTICE severity and message
-// interpolation/formatting
-func (s *Service) Noticef(r *http.Request, format string, v ...any) {
-	logf(s, r, "NOTICE", format, v...)
-}
-
-// Warning logs a message with WARNING severity
-func (s *Service) Warning(r *http.Request, message string) {
-	logf(s, r, "WARNING", message)
-}
-
-// Warningf logs a message with WARNING severity and message
-// interpolation/formatting
-func (s *Service) Warningf(r *http.Request, format string, v ...any) {
-	logf(s, r, "WARNING", format, v...)
-}
-
-// Error logs a message with ERROR severity
-func (s *Service) Error(r *http.Request, err error) {
-	logf(s, r, "ERROR", err.Error())
-}
-
-// Critical logs a message with CRITICAL severity
-func (s *Service) Critical(r *http.Request, message string) {
-	logf(s, r, "CRITICAL", message)
-}
-
-// Criticalf logs a message with CRITICAL severity and message
-// interpolation/formatting
-func (s *Service) Criticalf(r *http.Request, format string, v ...any) {
-	logf(s, r, "CRITICAL", format, v...)
-}
-
-// Alert logs a message with ALERT severity
-func (s *Service) Alert(r *http.Request, message string) {
-	logf(s, r, "ALERT", message)
-}
-
-// Alertf logs a message with ALERT severity and message
-// interpolation/formatting
-func (s *Service) Alertf(r *http.Request, format string, v ...any) {
-	logf(s, r, "ALERT", format, v...)
-}
-
-// Emergency logs a message with EMERGENCY severity
-func (s *Service) Emergency(r *http.Request, message string) {
-	logf(s, r, "EMERGENCY", message)
-}
-
-// Emergencyf logs a message with EMERGENCY severity and message
-// interpolation/formatting
-func (s *Service) Emergencyf(r *http.Request, format string, v ...any) {
-	logf(s, r, "EMERGENCY", format, v...)
-}
-
-// Fatal logs a message and terminates the process.
-func (s *Service) Fatal(r *http.Request, err error) {
-	log.Fatalf("fatal error: %v", err)
 }
