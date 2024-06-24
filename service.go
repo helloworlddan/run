@@ -99,7 +99,7 @@ func (s *Service) ListenAndServeGRPC() error {
 	s.shutdown(ctx)
 
 	Info(nil, "shutdown complete")
-	return nil
+	return grpc.ErrServerStopped
 }
 
 // ListenAndServe starts the HTTP server, listens and serves requests
@@ -141,7 +141,7 @@ func (s *Service) ListenAndServeHTTP() error {
 	s.shutdown(ctx)
 
 	Info(nil, "shutdown complete")
-	return nil
+	return http.ErrServerClosed
 }
 
 // ShutdownFunc registers a supplied function to be executed on server shutdown
