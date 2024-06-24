@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"runtime"
 	"strings"
 )
 
@@ -26,8 +27,17 @@ type LogEntry struct {
 	// Trace is the trace ID of the log message which will be propagated into
 	// Cloud Trace.
 	Trace string `json:"logging.googleapis.com/trace,omitempty"`
+	// SourceLocation holds the location within the source where the log message
+	// was generated.
+	SourceLocation *SourceLocation `json:"logging.googleapis.com/sourceLocation,omitempty"`
 	// Component is the name of the service or job that produces the log entry.
 	Component string `json:"component,omitempty"`
+}
+
+type SourceLocation struct {
+	File     string `json:"file,omitempty"`
+	Function string `json:"function,omitempty"`
+	Line     string `json:"line,omitempty"`
 }
 
 // String returns a JSON representation of the log entry.
@@ -155,12 +165,22 @@ func logf(r *http.Request, severity string, format string, v ...any) {
 		severity = "DEFAULT"
 	}
 
+	location := &SourceLocation{}
+	caller, file, line, ok := runtime.Caller(2)
+	if ok {
+		location.File = file
+		location.Line = fmt.Sprintf("%d", line)
+		location.Function = runtime.FuncForPC(caller).Name()
+	}
+
 	message := fmt.Sprintf(format, v...)
+	component := Name()
 
 	le := &LogEntry{
-		Message:   message,
-		Severity:  severity,
-		Component: Name(),
+		Severity:       severity,
+		SourceLocation: location,
+		Message:        message,
+		Component:      component,
 	}
 
 	if r == nil {
