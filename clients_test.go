@@ -19,7 +19,7 @@ import (
 )
 
 func TestAddClient(t *testing.T) {
-	ResetClients()
+	resetClients()
 
 	AddClient("some key", nil)
 
@@ -29,7 +29,7 @@ func TestAddClient(t *testing.T) {
 }
 
 func TestGetClient(t *testing.T) {
-	ResetClients()
+	resetClients()
 
 	clientName := "test.client"
 	client := http.DefaultClient
@@ -52,7 +52,7 @@ func TestGetClient(t *testing.T) {
 }
 
 func TestListClientNames(t *testing.T) {
-	ResetClients()
+	resetClients()
 
 	names := ListClientNames()
 	if len(names) != 0 {

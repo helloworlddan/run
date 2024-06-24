@@ -249,6 +249,6 @@ func metadata(path string) (string, error) {
 	return strings.TrimSpace(string(raw)), nil
 }
 
-func ResetInstance() {
+func resetInstance() {
 	this = instance{}
 }

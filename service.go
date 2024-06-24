@@ -59,11 +59,6 @@ func (s *Service) GRPCServer() *grpc.Server {
 	return s.grpcServer
 }
 
-// String returns the name of the service to satisfy fmt.Stringer
-func (s *Service) String() string {
-	return Name()
-}
-
 // ListenAndServe starts the GRPC server, listens and serves requests
 //
 // It also traps SIGINT and SIGTERM. Both signals will cause a graceful

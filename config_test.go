@@ -19,7 +19,7 @@ import (
 )
 
 func TestPutConfig(t *testing.T) {
-	ResetConfig()
+	resetConfig()
 
 	PutConfig("some key", "some val")
 
@@ -29,7 +29,7 @@ func TestPutConfig(t *testing.T) {
 }
 
 func TestGetConfig(t *testing.T) {
-	ResetConfig()
+	resetConfig()
 
 	configKey := "test.config"
 	configVal := "test.config.val"
@@ -51,7 +51,7 @@ func TestGetConfig(t *testing.T) {
 }
 
 func TestListConfigKeys(t *testing.T) {
-	ResetConfig()
+	resetConfig()
 
 	keys := ListConfigKeys()
 	if len(keys) != 0 {
@@ -74,7 +74,7 @@ func TestListConfigKeys(t *testing.T) {
 }
 
 func TestLoadConfig(t *testing.T) {
-	ResetConfig()
+	resetConfig()
 
 	envVarKey := "some-test-key"
 	envVarVal := "some-test-val"

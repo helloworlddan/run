@@ -20,7 +20,7 @@ import (
 )
 
 func TestAddAuthHeader(t *testing.T) {
-	ResetInstance()
+	resetInstance()
 	method := http.MethodGet
 	url := "https://example.com"
 	req, err := http.NewRequest(method, url, nil)
@@ -46,7 +46,7 @@ func TestAddAuthHeader(t *testing.T) {
 }
 
 func TestProjectID(t *testing.T) {
-	ResetInstance()
+	resetInstance()
 	envVarKey := "GOOGLE_CLOUD_PROJECT"
 	envVarVal := "some-valid-project"
 
@@ -62,7 +62,7 @@ func TestProjectID(t *testing.T) {
 }
 
 func TestServicePort(t *testing.T) {
-	ResetInstance()
+	resetInstance()
 	envVarKey := "PORT"
 	envVarVal := "8081"
 
@@ -81,7 +81,7 @@ func TestServicePort(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	ResetInstance()
+	resetInstance()
 	result = ServicePort()
 	if result != envVarVal {
 		t.Fatalf(`port() = %s, want %s`, result, envVarVal)
@@ -89,7 +89,7 @@ func TestServicePort(t *testing.T) {
 }
 
 func TestServiceName(t *testing.T) {
-	ResetInstance()
+	resetInstance()
 	envVarKey := "K_SERVICE"
 	envVarVal := "service-001"
 
@@ -108,7 +108,7 @@ func TestServiceName(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	ResetInstance()
+	resetInstance()
 	result = ServiceName()
 	if result != envVarVal {
 		t.Fatalf(`KNativeService() = %s, want %s`, result, envVarVal)
@@ -116,7 +116,7 @@ func TestServiceName(t *testing.T) {
 }
 
 func TestServiceRevision(t *testing.T) {
-	ResetInstance()
+	resetInstance()
 	envVarKey := "K_REVISION"
 	envVarVal := "revision-001"
 
@@ -136,7 +136,7 @@ func TestServiceRevision(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	ResetInstance()
+	resetInstance()
 	result = ServiceRevision()
 	if result != envVarVal || err != nil {
 		t.Fatalf(`kNativeRevision() = %s, %v, want %s, error`, result, err, envVarVal)
@@ -144,7 +144,7 @@ func TestServiceRevision(t *testing.T) {
 }
 
 func TestJobName(t *testing.T) {
-	ResetInstance()
+	resetInstance()
 	envVarKey := "CLOUD_RUN_JOB"
 	envVarVal := "job-001"
 
@@ -163,7 +163,7 @@ func TestJobName(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	ResetInstance()
+	resetInstance()
 	result = JobName()
 	if result != envVarVal {
 		t.Fatalf(`jobName() = %s, want %s`, result, envVarVal)
@@ -171,7 +171,7 @@ func TestJobName(t *testing.T) {
 }
 
 func TestJobExecution(t *testing.T) {
-	ResetInstance()
+	resetInstance()
 	envVarKey := "CLOUD_RUN_EXECUTION"
 	envVarVal := "job-execution-001"
 
@@ -190,7 +190,7 @@ func TestJobExecution(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	ResetInstance()
+	resetInstance()
 	result = JobExecution()
 	if result != envVarVal {
 		t.Fatalf(`JobExecution() = %s, want %s`, result, envVarVal)
@@ -198,7 +198,7 @@ func TestJobExecution(t *testing.T) {
 }
 
 func TestJobTaskIndex(t *testing.T) {
-	ResetInstance()
+	resetInstance()
 	envVarKey := "CLOUD_RUN_TASK_INDEX"
 	envVarVal := 12
 
@@ -217,7 +217,7 @@ func TestJobTaskIndex(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	ResetInstance()
+	resetInstance()
 	result = JobTaskIndex()
 	if result != envVarVal {
 		t.Fatalf(`JobTaskIndex() = %d, want %d`, result, envVarVal)
@@ -225,7 +225,7 @@ func TestJobTaskIndex(t *testing.T) {
 }
 
 func TestJobTaskAttempt(t *testing.T) {
-	ResetInstance()
+	resetInstance()
 	envVarKey := "CLOUD_RUN_TASK_ATTEMPT"
 	envVarVal := 14
 
@@ -244,7 +244,7 @@ func TestJobTaskAttempt(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	ResetInstance()
+	resetInstance()
 	result = JobTaskAttempt()
 	if result != envVarVal {
 		t.Fatalf(`JobTaskAttempt() = %d, want %d`, result, envVarVal)
@@ -252,7 +252,7 @@ func TestJobTaskAttempt(t *testing.T) {
 }
 
 func TestJobTaskCount(t *testing.T) {
-	ResetInstance()
+	resetInstance()
 	envVarKey := "CLOUD_RUN_TASK_COUNT"
 	envVarVal := 16
 
@@ -271,7 +271,7 @@ func TestJobTaskCount(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	ResetInstance()
+	resetInstance()
 	result = JobTaskCount()
 	if result != envVarVal {
 		t.Fatalf(`JobTaskCount() = %d, want %d`, result, envVarVal)

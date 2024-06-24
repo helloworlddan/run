@@ -20,7 +20,7 @@ var clients map[string]any
 
 func ensureInitClients() {
 	if clients == nil {
-		ResetClients()
+		resetClients()
 	}
 }
 
@@ -47,6 +47,6 @@ func ListClientNames() []string {
 	return names
 }
 
-func ResetClients() {
+func resetClients() {
 	clients = make(map[string]any)
 }

@@ -21,7 +21,7 @@ var config map[string]string
 
 func ensureInitConfig() {
 	if config == nil {
-		ResetConfig()
+		resetConfig()
 	}
 }
 
@@ -60,6 +60,6 @@ func LoadConfig(env string) (string, error) {
 	return val, nil
 }
 
-func ResetConfig() {
+func resetConfig() {
 	config = make(map[string]string)
 }
