@@ -79,10 +79,10 @@ func ID() string {
 		return this.id
 	}
 	id, err := metadata("instance/id")
+	this.id = id
 	if err != nil {
 		this.id = "000000"
 	}
-	this.id = id
 	return this.id
 }
 
@@ -117,10 +117,10 @@ func ProjectID() string {
 		return this.projectID
 	}
 	project, err := metadata("project/project-id")
+	this.projectID = project
 	if err != nil {
 		this.projectID = "local"
 	}
-	this.projectID = project
 	return this.projectID
 }
 
@@ -129,10 +129,10 @@ func ProjectNumber() string {
 		return this.projectNumber
 	}
 	number, err := metadata("project/numeric-project-id")
+	this.projectNumber = number
 	if err != nil {
 		this.projectNumber = "000000000000"
 	}
-	this.projectNumber = number
 	return this.projectNumber
 }
 
@@ -141,10 +141,10 @@ func Region() string {
 		return this.region
 	}
 	region, err := metadata("instance/region")
+	this.region = region
 	if err != nil {
 		this.region = "local"
 	}
-	this.region = region
 	return this.region
 }
 
@@ -153,10 +153,10 @@ func ServiceAccountEmail() string {
 		return this.serviceAccountEmail
 	}
 	email, err := metadata("instance/service-accounts/default/email")
+	this.serviceAccountEmail = email
 	if err != nil {
 		this.serviceAccountEmail = "local@localhost.com"
 	}
-	this.serviceAccountEmail = email
 	return this.serviceAccountEmail
 }
 
@@ -165,10 +165,10 @@ func ServiceAccountToken() string {
 		return this.serviceAccountToken
 	}
 	token, err := metadata("instance/service-accounts/default/token")
+	this.serviceAccountToken = token
 	if err != nil {
 		this.serviceAccountToken = "local-token"
 	}
-	this.serviceAccountToken = token
 	return this.serviceAccountToken
 }
 
@@ -188,10 +188,10 @@ func JobTaskIndex() int {
 		return this.jobTaskIndex
 	}
 	index, err := strconv.Atoi(os.Getenv("CLOUD_RUN_TASK_INDEX"))
-	if err != nil {
-		index = -1
-	}
 	this.jobTaskIndex = index
+	if err != nil {
+		this.jobTaskIndex = -1
+	}
 	return this.jobTaskIndex
 }
 
@@ -200,10 +200,10 @@ func JobTaskAttempt() int {
 		return this.jobTaskAttempt
 	}
 	attempt, err := strconv.Atoi(os.Getenv("CLOUD_RUN_TASK_ATTEMPT"))
-	if err != nil {
-		attempt = -1
-	}
 	this.jobTaskAttempt = attempt
+	if err != nil {
+		this.jobTaskAttempt = -1
+	}
 	return this.jobTaskAttempt
 }
 
@@ -212,10 +212,10 @@ func JobTaskCount() int {
 		return this.jobTaskCount
 	}
 	count, err := strconv.Atoi(os.Getenv("CLOUD_RUN_TASK_COUNT"))
-	if err != nil {
-		count = -1
-	}
 	this.jobTaskCount = count
+	if err != nil {
+		this.jobTaskCount = -1
+	}
 	return this.jobTaskCount
 }
 
