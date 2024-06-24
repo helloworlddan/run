@@ -13,7 +13,6 @@
 package run
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -22,76 +21,12 @@ import (
 	"strings"
 )
 
-func NewAuthenticatedRequest(ctx context.Context, method string, url string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, method, url, body)
-	if err != nil {
-		return nil, err
-	}
-	token := ServiceAccountToken()
-	req.Header.Add("Authorization", fmt.Sprintf("bearer: %s", token))
-
-	return req, nil
-}
-
-func ProjectID() string {
-	project := os.Getenv("GOOGLE_CLOUD_PROJECT")
-	if len(project) >= 6 { // ProjectID should be at least 6 chars
-		return project
-	}
-
-	project, err := metadata("project/project-id")
-	if err != nil {
-		return "local"
-	}
-	return project
-}
-
-func ProjectNumber() string {
-	number, err := metadata("project/numeric-project-id")
-	if err != nil {
-		return "000000000000"
-	}
-	return number
-}
-
-func Region() string {
-	region, err := metadata("instance/region")
-	if err != nil {
-		return "local"
-	}
-	return region
-}
-
 func ID() string {
 	id, err := metadata("instance/id")
 	if err != nil {
 		return "00000"
 	}
 	return id
-}
-
-func ServiceAccountEmail() string {
-	email, err := metadata("instance/service-accounts/default/email")
-	if err != nil {
-		return "local"
-	}
-	return email
-}
-
-func ServiceAccountToken() string {
-	token, err := metadata("instance/service-accounts/default/token")
-	if err != nil {
-		return "local"
-	}
-	return token
-}
-
-func Port() string {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-	return port
 }
 
 func Name() string {
@@ -140,10 +75,63 @@ func JobExecution() string {
 	return execution
 }
 
+func ProjectID() string {
+	project := os.Getenv("GOOGLE_CLOUD_PROJECT")
+	if len(project) >= 6 { // ProjectID should be at least 6 chars
+		return project
+	}
+
+	project, err := metadata("project/project-id")
+	if err != nil {
+		return "local"
+	}
+	return project
+}
+
+func ProjectNumber() string {
+	number, err := metadata("project/numeric-project-id")
+	if err != nil {
+		return "000000000000"
+	}
+	return number
+}
+
+func Region() string {
+	region, err := metadata("instance/region")
+	if err != nil {
+		return "local"
+	}
+	return region
+}
+
+func ServiceAccountEmail() string {
+	email, err := metadata("instance/service-accounts/default/email")
+	if err != nil {
+		return "local"
+	}
+	return email
+}
+
+func ServiceAccountToken() string {
+	token, err := metadata("instance/service-accounts/default/token")
+	if err != nil {
+		return "local"
+	}
+	return token
+}
+
+func Port() string {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	return port
+}
+
 func JobTaskIndex() int {
 	index, err := strconv.Atoi(os.Getenv("CLOUD_RUN_TASK_INDEX"))
 	if err != nil {
-		return 0
+		return -1
 	}
 	return index
 }
@@ -151,7 +139,7 @@ func JobTaskIndex() int {
 func JobTaskAttempt() int {
 	attempt, err := strconv.Atoi(os.Getenv("CLOUD_RUN_TASK_ATTEMPT"))
 	if err != nil {
-		return 0
+		return -1
 	}
 	return attempt
 }
@@ -159,9 +147,15 @@ func JobTaskAttempt() int {
 func JobTaskCount() int {
 	count, err := strconv.Atoi(os.Getenv("CLOUD_RUN_TASK_COUNT"))
 	if err != nil {
-		return 0
+		return -1
 	}
 	return count
+}
+
+func AddAuthHeader(r *http.Request) *http.Request {
+	token := ServiceAccountToken()
+	r.Header.Add("Authorization", fmt.Sprintf("bearer: %s", token))
+	return r
 }
 
 func metadata(path string) (string, error) {

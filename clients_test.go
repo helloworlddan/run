@@ -19,17 +19,17 @@ import (
 )
 
 func TestAddClient(t *testing.T) {
-	clients = make(map[string]any)
+	ResetClients()
+
 	AddClient("some key", nil)
 
 	if len(clients) != 1 {
-		t.Fatalf("addCleint() failed to add client correctly")
+		t.Fatalf("AddCleint() failed to add client correctly")
 	}
-	clients = make(map[string]any)
 }
 
 func TestGetClient(t *testing.T) {
-	clients = make(map[string]any)
+	ResetClients()
 
 	clientName := "test.client"
 	client := http.DefaultClient
@@ -37,27 +37,26 @@ func TestGetClient(t *testing.T) {
 
 	_, err := GetClient("non-existent")
 	if err == nil {
-		t.Fatalf("getClient() failed to err on non-existent client")
+		t.Fatalf("GetClient() failed to err on non-existent client")
 	}
 
 	rawResult, err := GetClient(clientName)
 	if err != nil {
-		t.Fatalf("getClient() failed to retrieve existing client")
+		t.Fatalf("GetClient() failed to retrieve existing client")
 	}
 
 	result := rawResult.(*http.Client)
 	if result != client {
-		t.Fatalf("getClient() failed to store client correctly")
+		t.Fatalf("GetClient() failed to store client correctly")
 	}
-	clients = make(map[string]any)
 }
 
 func TestListClientNames(t *testing.T) {
-	clients = make(map[string]any)
+	ResetClients()
 
 	names := ListClientNames()
 	if len(names) != 0 {
-		t.Fatalf("listClientNames() failed to read client names correctly")
+		t.Fatalf("ListClientNames() failed to read client names correctly")
 	}
 
 	testNames := []string{"client.A", "client.B"}
@@ -67,11 +66,10 @@ func TestListClientNames(t *testing.T) {
 
 	names = ListClientNames()
 	if len(names) != 2 {
-		t.Fatalf("listClientNames() failed to read client names correctly")
+		t.Fatalf("ListClientNames() failed to read client names correctly")
 	}
 
 	if !slices.Contains(names, testNames[0]) || !slices.Contains(names, testNames[1]) {
-		t.Fatalf("listClientNames() doesn't contain stored client name")
+		t.Fatalf("ListClientNames() doesn't contain stored client name")
 	}
-	clients = make(map[string]any)
 }

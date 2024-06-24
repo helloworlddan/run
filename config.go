@@ -19,11 +19,19 @@ import (
 
 var config map[string]string
 
+func ensureInitConfig() {
+	if config == nil {
+		ResetConfig()
+	}
+}
+
 func PutConfig(key string, val string) {
+	ensureInitConfig()
 	config[key] = val
 }
 
 func GetConfig(key string) (string, error) {
+	ensureInitConfig()
 	val, ok := config[key]
 	if !ok {
 		return "", fmt.Errorf("no config found for key: '%s'", key)
@@ -32,6 +40,7 @@ func GetConfig(key string) (string, error) {
 }
 
 func ListConfigKeys() []string {
+	ensureInitConfig()
 	keys := make([]string, 0, len(config))
 	for key := range config {
 		keys = append(keys, key)
@@ -40,12 +49,17 @@ func ListConfigKeys() []string {
 }
 
 func LoadConfig(env string) (string, error) {
+	ensureInitConfig()
 	val := os.Getenv(env)
 	if val == "" {
 		return "", fmt.Errorf("unable to find value for env var: '%s'", env)
 	}
 
-	config[env] = val
+	PutConfig(env, val)
 
 	return val, nil
+}
+
+func ResetConfig() {
+	config = make(map[string]string)
 }

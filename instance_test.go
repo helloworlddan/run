@@ -13,42 +13,34 @@
 package run
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"testing"
 )
 
-func TestNewAuthenticatedRequest(t *testing.T) {
-	ctx := context.Background()
+func TestAddAuthHeader(t *testing.T) {
 	method := http.MethodGet
 	url := "https://example.com"
-	req, err := NewAuthenticatedRequest(ctx, method, url, nil)
+	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		t.Fatal("authenticatedRequest() fails to instantiate request")
+		t.Fatal("AddAuthHeader() fails to instantiate request")
 	}
+
+	req = AddAuthHeader(req)
 
 	val, ok := req.Header["Authorization"]
 	if !ok {
-		t.Fatal("authenticatedRequest() contains no 'Authorization' header")
+		t.Fatal("AddAuthHeader() contains no 'Authorization' header")
 	}
 
 	if len(val) != 1 {
-		t.Fatal("authenticatedRequest() contains malformed 'Authorization' header")
+		t.Fatal("AddAuthHeader() contains malformed 'Authorization' header")
 	}
 
 	expect := fmt.Sprintf("bearer: %s", ServiceAccountToken())
 	if val[0] != expect {
-		t.Fatal("authenticatedRequest() contains invalid 'Authorization' header")
-	}
-
-	if req.URL.String() != url {
-		t.Fatal("authenticatedRequest() constructed bad URL")
-	}
-
-	if req.Method != method {
-		t.Fatal("authenticatedRequest() constructed bad URL")
+		t.Fatal("AddAuthHeader() contains invalid 'Authorization' header")
 	}
 }
 
@@ -203,9 +195,8 @@ func TestJobTaskIndex(t *testing.T) {
 	}
 
 	result := JobTaskIndex()
-	// NOTE: maybe i want -1 here to indicate a problem?
-	if result != 0 {
-		t.Fatalf(`jobTaskIndex() = %d, want 0`, result)
+	if result != -1 {
+		t.Fatalf(`jobTaskIndex() = %d, want -1`, result)
 	}
 
 	err = os.Setenv(envVarKey, fmt.Sprintf("%d", envVarVal))
@@ -229,9 +220,8 @@ func TestJobTaskAttempt(t *testing.T) {
 	}
 
 	result := JobTaskAttempt()
-	// NOTE: maybe i want -1 here to indicate a problem?
-	if result != 0 {
-		t.Fatalf(`JobTaskAttempt() = %d, want 0`, result)
+	if result != -1 {
+		t.Fatalf(`JobTaskAttempt() = %d, want -1`, result)
 	}
 
 	err = os.Setenv(envVarKey, fmt.Sprintf("%d", envVarVal))
@@ -255,9 +245,8 @@ func TestJobTaskCount(t *testing.T) {
 	}
 
 	result := JobTaskCount()
-	// NOTE: maybe i want -1 here to indicate a problem?
-	if result != 0 {
-		t.Fatalf(`JobTaskCount() = %d, want 0`, result)
+	if result != -1 {
+		t.Fatalf(`JobTaskCount() = %d, want -1`, result)
 	}
 
 	err = os.Setenv(envVarKey, fmt.Sprintf("%d", envVarVal))

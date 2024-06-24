@@ -18,11 +18,19 @@ import (
 
 var clients map[string]any
 
+func ensureInitClients() {
+	if clients == nil {
+		ResetClients()
+	}
+}
+
 func AddClient(name string, client any) {
+	ensureInitClients()
 	clients[name] = client
 }
 
 func GetClient(name string) (any, error) {
+	ensureInitClients()
 	client, ok := clients[name]
 	if !ok {
 		return "", fmt.Errorf("no client found for name: '%s'", name)
@@ -31,9 +39,14 @@ func GetClient(name string) (any, error) {
 }
 
 func ListClientNames() []string {
+	ensureInitClients()
 	names := make([]string, 0, len(clients))
 	for name := range clients {
 		names = append(names, name)
 	}
 	return names
+}
+
+func ResetClients() {
+	clients = make(map[string]any)
 }
