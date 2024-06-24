@@ -21,135 +21,202 @@ import (
 	"strings"
 )
 
-func ID() string {
-	id, err := metadata("instance/id")
-	if err != nil {
-		return "00000"
-	}
-	return id
+type instance struct {
+	id                  string
+	serviceName         string
+	jobName             string
+	serviceRevision     string
+	jobExecution        string
+	projectID           string
+	projectNumber       string
+	region              string
+	serviceAccountEmail string
+	serviceAccountToken string
+	servicePort         string
+	jobTaskIndex        int
+	jobTaskAttempt      int
+	jobTaskCount        int
 }
+
+var this instance // NOTE: acts as cache
 
 func Name() string {
 	name := ServiceName()
 	if name != "local" {
 		return name
 	}
-
 	name = JobName()
 	if name != "local" {
 		return name
 	}
-
 	return "local"
 }
 
 func ServiceName() string {
-	name := os.Getenv("K_SERVICE")
-	if name == "" {
-		return "local"
+	if this.serviceName != "" {
+		return this.serviceName
 	}
-	return name
-}
-
-func ServiceRevision() string {
-	revision := os.Getenv("K_REVISION")
-	if revision == "" {
-		return fmt.Sprintf("%s-00001-xxx", Name())
+	this.serviceName = os.Getenv("K_SERVICE")
+	if this.serviceName == "" {
+		this.serviceName = "local"
 	}
-	return revision
+	return this.serviceName
 }
 
 func JobName() string {
-	job := os.Getenv("CLOUD_RUN_JOB")
-	if job == "" {
-		return "local"
+	if this.jobName != "" {
+		return this.jobName
 	}
-	return job
+	this.jobName = os.Getenv("CLOUD_RUN_JOB")
+	if this.jobName == "" {
+		this.jobName = "local"
+	}
+	return this.jobName
+}
+
+func ID() string {
+	if this.id != "" {
+		return this.id
+	}
+	id, err := metadata("instance/id")
+	if err != nil {
+		this.id = "000000"
+	}
+	this.id = id
+	return this.id
+}
+
+func ServiceRevision() string {
+	if this.serviceRevision != "" {
+		return this.serviceRevision
+	}
+	this.serviceRevision = os.Getenv("K_REVISION")
+	if this.serviceRevision == "" {
+		this.serviceRevision = fmt.Sprintf("%s-00001-xxx", Name())
+	}
+	return this.serviceRevision
 }
 
 func JobExecution() string {
-	execution := os.Getenv("CLOUD_RUN_EXECUTION")
-	if execution == "" {
-		return "local"
+	if this.jobExecution != "" {
+		return this.jobExecution
 	}
-	return execution
+	this.jobExecution = os.Getenv("CLOUD_RUN_EXECUTION")
+	if this.jobExecution == "" {
+		this.jobExecution = "local"
+	}
+	return this.jobExecution
 }
 
 func ProjectID() string {
-	project := os.Getenv("GOOGLE_CLOUD_PROJECT")
-	if len(project) >= 6 { // ProjectID should be at least 6 chars
-		return project
+	if this.projectID != "" {
+		return this.projectID
 	}
-
+	this.projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
+	if len(this.projectID) >= 6 { // ProjectID should be at least 6 chars
+		return this.projectID
+	}
 	project, err := metadata("project/project-id")
 	if err != nil {
-		return "local"
+		this.projectID = "local"
 	}
-	return project
+	this.projectID = project
+	return this.projectID
 }
 
 func ProjectNumber() string {
+	if this.projectNumber != "" {
+		return this.projectNumber
+	}
 	number, err := metadata("project/numeric-project-id")
 	if err != nil {
-		return "000000000000"
+		this.projectNumber = "000000000000"
 	}
-	return number
+	this.projectNumber = number
+	return this.projectNumber
 }
 
 func Region() string {
+	if this.region != "" {
+		return this.region
+	}
 	region, err := metadata("instance/region")
 	if err != nil {
-		return "local"
+		this.region = "local"
 	}
-	return region
+	this.region = region
+	return this.region
 }
 
 func ServiceAccountEmail() string {
+	if this.serviceAccountEmail != "" {
+		return this.serviceAccountEmail
+	}
 	email, err := metadata("instance/service-accounts/default/email")
 	if err != nil {
-		return "local"
+		this.serviceAccountEmail = "local@localhost.com"
 	}
-	return email
+	this.serviceAccountEmail = email
+	return this.serviceAccountEmail
 }
 
 func ServiceAccountToken() string {
+	if this.serviceAccountToken != "" {
+		return this.serviceAccountToken
+	}
 	token, err := metadata("instance/service-accounts/default/token")
 	if err != nil {
-		return "local"
+		this.serviceAccountToken = "local-token"
 	}
-	return token
+	this.serviceAccountToken = token
+	return this.serviceAccountToken
 }
 
-func Port() string {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+func ServicePort() string {
+	if this.servicePort != "" {
+		return this.servicePort
 	}
-	return port
+	this.servicePort = os.Getenv("PORT")
+	if this.servicePort == "" {
+		this.servicePort = "8080"
+	}
+	return this.servicePort
 }
 
 func JobTaskIndex() int {
+	if this.jobTaskIndex != 0 {
+		return this.jobTaskIndex
+	}
 	index, err := strconv.Atoi(os.Getenv("CLOUD_RUN_TASK_INDEX"))
 	if err != nil {
-		return -1
+		index = -1
 	}
-	return index
+	this.jobTaskIndex = index
+	return this.jobTaskIndex
 }
 
 func JobTaskAttempt() int {
+	if this.jobTaskAttempt != 0 {
+		return this.jobTaskAttempt
+	}
 	attempt, err := strconv.Atoi(os.Getenv("CLOUD_RUN_TASK_ATTEMPT"))
 	if err != nil {
-		return -1
+		attempt = -1
 	}
-	return attempt
+	this.jobTaskAttempt = attempt
+	return this.jobTaskAttempt
 }
 
 func JobTaskCount() int {
+	if this.jobTaskCount != 0 {
+		return this.jobTaskCount
+	}
 	count, err := strconv.Atoi(os.Getenv("CLOUD_RUN_TASK_COUNT"))
 	if err != nil {
-		return -1
+		count = -1
 	}
-	return count
+	this.jobTaskCount = count
+	return this.jobTaskCount
 }
 
 func AddAuthHeader(r *http.Request) *http.Request {
@@ -180,4 +247,8 @@ func metadata(path string) (string, error) {
 	}
 
 	return strings.TrimSpace(string(raw)), nil
+}
+
+func ResetInstance() {
+	this = instance{}
 }

@@ -75,8 +75,8 @@ func (s *Service) ListenAndServeGRPC() error {
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
 	go func(s *Service, errChan chan<- error) {
-		Noticef(nil, "started and listening on port %s", Port())
-		listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%s", Port()))
+		Noticef(nil, "started and listening on port %s", ServicePort())
+		listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%s", ServicePort()))
 		if err != nil {
 			log.Fatalf("failed to listen: %v", err)
 		}
@@ -117,10 +117,10 @@ func (s *Service) ListenAndServeHTTP() error {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
-	s.httpServer.Addr = fmt.Sprintf(":%s", Port())
+	s.httpServer.Addr = fmt.Sprintf(":%s", ServicePort())
 
 	go func(s *Service, errChan chan<- error) {
-		Noticef(nil, "started and listening on port %s", Port())
+		Noticef(nil, "started and listening on port %s", ServicePort())
 		if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errChan <- err
 		}
