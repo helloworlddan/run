@@ -8,7 +8,7 @@ on Cloud Run.
 ### HTTP Services
 
 Read more in
-[run-examples](https://github.com/helloworlddan/run-examples/tree/main/run-service).
+[run-examples](https://github.com/helloworlddan/run-examples/tree/main/run-http-service).
 
 ```golang
 package main
