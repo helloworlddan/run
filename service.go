@@ -14,6 +14,7 @@ package run
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -23,63 +24,36 @@ import (
 	"syscall"
 	"time"
 
-	"google.golang.org/grpc"
+	http2 "golang.org/x/net/http2"
+	http2clear "golang.org/x/net/http2/h2c"
+	grpc "google.golang.org/grpc"
 )
-
-// Service is intended to be instantiated once and kept around to access
-// functionality related to the Cloud Run Service runtime.
-type Service struct {
-	httpServer *http.Server
-	httpRouter *http.ServeMux
-	grpcServer *grpc.Server
-	shutdown   func(ctx context.Context)
-}
-
-// NewService creates a new Service instance.
-func NewService(opt ...grpc.ServerOption) *Service {
-	log.SetFlags(0)
-	s := &Service{
-		httpRouter: &http.ServeMux{},
-		httpServer: &http.Server{},
-		grpcServer: grpc.NewServer(opt...),
-		shutdown:   func(ctx context.Context) {},
-	}
-	s.httpServer.Handler = s.httpRouter
-
-	// simple uptime check handler
-	s.httpRouter.HandleFunc("/uptimez", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "OK")
-	})
-
-	return s
-}
-
-func (s *Service) GRPCServer() *grpc.Server {
-	return s.grpcServer
-}
 
 // ListenAndServe starts the GRPC server, listens and serves requests
 //
 // It also traps SIGINT and SIGTERM. Both signals will cause a graceful
 // shutdown of the GRPC server and executes the user supplied
-// `run.ShutdownFunc`.
-func (s *Service) ListenAndServeGRPC() error {
+// shutdown func.
+func ListenAndServeGRPC(shutdown func(context.Context), server *grpc.Server) error {
 	errChan := make(chan error, 1)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
-	go func(s *Service, errChan chan<- error) {
+	if server == nil {
+		return errors.New("cannot listen using ni GRPC server")
+	}
+
+	go func(errChan chan<- error) {
 		Noticef(nil, "started and listening on port %s", ServicePort())
 		listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%s", ServicePort()))
 		if err != nil {
 			log.Fatalf("failed to listen: %v", err)
 		}
 
-		if err := s.grpcServer.Serve(listener); err != nil && err != grpc.ErrServerStopped {
+		if err := server.Serve(listener); err != nil && err != grpc.ErrServerStopped {
 			errChan <- err
 		}
-	}(s, errChan)
+	}(errChan)
 
 	select {
 	case err := <-errChan:
@@ -93,10 +67,10 @@ func (s *Service) ListenAndServeGRPC() error {
 	defer cancel()
 
 	// Gracefully shutdown the http server by waiting on existing requests
-	s.grpcServer.Stop()
+	server.Stop()
 
 	// User-supplied shutdown
-	s.shutdown(ctx)
+	shutdown(ctx)
 
 	Info(nil, "shutdown complete")
 	return grpc.ErrServerStopped
@@ -106,20 +80,25 @@ func (s *Service) ListenAndServeGRPC() error {
 //
 // It also traps SIGINT and SIGTERM. Both signals will cause a graceful
 // shutdown of the HTTP server and executes the user supplied
-// `run.ShutdownFunc`.
-func (s *Service) ListenAndServeHTTP() error {
+// shutdown func.
+func ListenAndServeHTTP(shutdown func(context.Context), server *http.Server) error {
 	errChan := make(chan error, 1)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
-	s.httpServer.Addr = fmt.Sprintf(":%s", ServicePort())
+	if server == nil {
+		server = &http.Server{
+			Addr:    net.JoinHostPort("0.0.0.0", ServicePort()),
+			Handler: http2clear.NewHandler(http.DefaultServeMux, &http2.Server{}),
+		}
+	}
 
-	go func(s *Service, errChan chan<- error) {
+	go func(errChan chan<- error) {
 		Noticef(nil, "started and listening on port %s", ServicePort())
-		if err := s.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errChan <- err
 		}
-	}(s, errChan)
+	}(errChan)
 
 	select {
 	case err := <-errChan:
@@ -133,32 +112,13 @@ func (s *Service) ListenAndServeHTTP() error {
 	defer cancel()
 
 	// Gracefully shutdown the http server by waiting on existing requests
-	if err := s.httpServer.Shutdown(ctx); err != nil {
+	if err := server.Shutdown(ctx); err != nil {
 		Fatal(nil, err)
 	}
 
 	// User-supplied shutdown
-	s.shutdown(ctx)
+	shutdown(ctx)
 
 	Info(nil, "shutdown complete")
 	return http.ErrServerClosed
-}
-
-// ShutdownFunc registers a supplied function to be executed on server shutdown
-//
-// This is useful to run clean up routines, flush caches, drain and terminate
-// connections, etc.
-func (s *Service) ShutdownFunc(handler func(ctx context.Context)) {
-	s.shutdown = handler
-}
-
-// HandleFunc registers `http.HandleFunc` to respond to requests
-func (s *Service) HandleFunc(pattern string, handler func(w http.ResponseWriter, r *http.Request)) {
-	s.httpRouter.HandleFunc(pattern, handler)
-}
-
-// HandleStatic registers a handle to servie static assets from `path`
-func (s *Service) HandleStatic(pattern string, path string) {
-	handler := http.FileServer(http.Dir(path))
-	s.httpRouter.Handle(pattern, http.StripPrefix(pattern, handler))
 }

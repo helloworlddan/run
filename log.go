@@ -160,6 +160,7 @@ func Fatal(r *http.Request, err error) {
 }
 
 func logf(r *http.Request, severity string, format string, v ...any) {
+	log.SetFlags(0)
 	if !isLogEntrySeverity(severity) {
 		// Defaulting to the default, duh
 		severity = "DEFAULT"
