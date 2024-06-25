@@ -22,22 +22,18 @@ import (
  "github.com/helloworlddan/run"
 )
 
-var service *run.Service
-
 func main() {
- service = run.NewService()
-
- service.HandleFunc("/", indexHandler)
+ http.HandleFunc("/", indexHandler)
 
  run.PutConfig("some-key", "some-val")
 
- service.ShutdownFunc(func(ctx context.Context) {
+ shutdown := func(ctx context.Context) {
   run.Debug(nil, "shutting down connections...")
   time.Sleep(time.Second * 1) // Pretending to clean up
   run.Debug(nil, "connections closed")
- })
+ }
 
- err := service.ListenAndServeHTTP()
+ err := run.ServeHTTP(shutdown, nil)
  if err != nil {
   run.Fatal(nil, err)
  }
@@ -70,20 +66,20 @@ import (
 
  "github.com/helloworlddan/run"
  "github.com/helloworlddan/run-examples/run-grpc-service/runclock"
+ "google.golang.org/grpc"
 )
 
 func main() {
- service := run.NewService()
+ server := grpc.NewServer()
+ runclock.RegisterRunClockServer(server, clockServer{})
 
- runclock.RegisterRunClockServer(service.GRPCServer(), clockServer{})
-
- service.ShutdownFunc(func(ctx context.Context) {
+ shutdown := func(ctx context.Context) {
   run.Debug(nil, "shutting down connections...")
   time.Sleep(time.Second * 1) // Pretending to clean up
   run.Debug(nil, "connections closed")
- })
+ }
 
- err := service.ListenAndServeGRPC()
+ err := run.ServeGRPC(shutdown, server)
  if err != nil {
   run.Fatal(nil, err)
  }
@@ -122,8 +118,6 @@ import (
 )
 
 func main() {
- _ = run.NewJob()
-
  // Store config
  run.PutConfig("my.app.key", "some value")
  cfgVal, err := run.GetConfig("my.app.key")
