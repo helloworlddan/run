@@ -15,7 +15,6 @@ package run
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -29,23 +28,22 @@ import (
 	grpc "google.golang.org/grpc"
 )
 
-// ListenAndServe starts the GRPC server, listens and serves requests
+// ServeGRPC starts the GRPC server, listens and serves requests
 //
 // It also traps SIGINT and SIGTERM. Both signals will cause a graceful
 // shutdown of the GRPC server and executes the user supplied
 // shutdown func.
-func ListenAndServeGRPC(shutdown func(context.Context), server *grpc.Server) error {
-	errChan := make(chan error, 1)
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
-
+func ServeGRPC(shutdown func(context.Context), server *grpc.Server) error {
 	if server == nil {
 		return errors.New("cannot listen using ni GRPC server")
 	}
 
+	errChan := make(chan error, 1)
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
+
 	go func(errChan chan<- error) {
-		Noticef(nil, "started and listening on port %s", ServicePort())
-		listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%s", ServicePort()))
+		listener, err := net.Listen("tcp", net.JoinHostPort("0.0.0.0", ServicePort()))
 		if err != nil {
 			log.Fatalf("failed to listen: %v", err)
 		}
@@ -54,6 +52,7 @@ func ListenAndServeGRPC(shutdown func(context.Context), server *grpc.Server) err
 			errChan <- err
 		}
 	}(errChan)
+	Noticef(nil, "started and listening on port %s", ServicePort())
 
 	select {
 	case err := <-errChan:
@@ -73,32 +72,37 @@ func ListenAndServeGRPC(shutdown func(context.Context), server *grpc.Server) err
 	shutdown(ctx)
 
 	Info(nil, "shutdown complete")
-	return grpc.ErrServerStopped
+	return nil
 }
 
-// ListenAndServe starts the HTTP server, listens and serves requests
+// ServeHTTP starts the HTTP server, listens and serves requests
 //
 // It also traps SIGINT and SIGTERM. Both signals will cause a graceful
 // shutdown of the HTTP server and executes the user supplied
 // shutdown func.
-func ListenAndServeHTTP(shutdown func(context.Context), server *http.Server) error {
+func ServeHTTP(shutdown func(context.Context), server *http.Server) error {
+	if server == nil {
+		mux := http.DefaultServeMux
+		mux.HandleFunc("GET /uptimez", func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+		})
+		server = &http.Server{
+			Addr:    net.JoinHostPort("0.0.0.0", ServicePort()),
+			Handler: http2clear.NewHandler(mux, &http2.Server{}),
+		}
+	}
+
 	errChan := make(chan error, 1)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
-	if server == nil {
-		server = &http.Server{
-			Addr:    net.JoinHostPort("0.0.0.0", ServicePort()),
-			Handler: http2clear.NewHandler(http.DefaultServeMux, &http2.Server{}),
-		}
-	}
-
 	go func(errChan chan<- error) {
-		Noticef(nil, "started and listening on port %s", ServicePort())
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errChan <- err
 		}
 	}(errChan)
+	Noticef(nil, "started and listening on port %s", ServicePort())
 
 	select {
 	case err := <-errChan:
@@ -120,5 +124,5 @@ func ListenAndServeHTTP(shutdown func(context.Context), server *http.Server) err
 	shutdown(ctx)
 
 	Info(nil, "shutdown complete")
-	return http.ErrServerClosed
+	return nil
 }
