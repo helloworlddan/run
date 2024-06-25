@@ -147,7 +147,7 @@ func main() {
  if err != nil {
   run.Error(nil, err)
  }
- req = run.AddAuthHeader(req)
+ req = run.AddOAuth2Header(req)
  resp, err := http.DefaultClient.Do(req)
  if err != nil {
   run.Error(nil, err)

@@ -33,7 +33,6 @@ type instance struct {
 	projectNumber       string
 	region              string
 	serviceAccountEmail string
-	serviceAccountToken string
 	servicePort         string
 	jobTaskIndex        int
 	jobTaskAttempt      int
@@ -162,16 +161,20 @@ func ServiceAccountEmail() string {
 	return this.serviceAccountEmail
 }
 
-func ServiceAccountToken() string {
-	if this.serviceAccountToken != "" {
-		return this.serviceAccountToken
-	}
+func ServiceAccountAccessToken() string {
 	token, err := metadata("instance/service-accounts/default/token")
-	this.serviceAccountToken = token
 	if err != nil {
-		this.serviceAccountToken = "local-token"
+		return "local-access-token"
 	}
-	return this.serviceAccountToken
+	return token
+}
+
+func ServiceAccountIdentityToken(audience string) string {
+	token, err := metadata(fmt.Sprintf("instance/service-accounts/default/identity?audience=%s", audience))
+	if err != nil {
+		return "local-identity-token"
+	}
+	return token
 }
 
 func ServicePort() string {
@@ -221,8 +224,14 @@ func JobTaskCount() int {
 	return this.jobTaskCount
 }
 
-func AddAuthHeader(r *http.Request) *http.Request {
-	token := ServiceAccountToken()
+func AddOAuth2Header(r *http.Request) *http.Request {
+	token := ServiceAccountAccessToken()
+	r.Header.Add("Authorization", fmt.Sprintf("bearer: %s", token))
+	return r
+}
+
+func AddOIDCHeader(r *http.Request, audience string) *http.Request {
+	token := ServiceAccountIdentityToken(audience)
 	r.Header.Add("Authorization", fmt.Sprintf("bearer: %s", token))
 	return r
 }
