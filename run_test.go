@@ -19,29 +19,29 @@ import (
 	"testing"
 )
 
-func TestAddAuthHeader(t *testing.T) {
+func TestAddOAuth2Header(t *testing.T) {
 	resetInstance()
 	method := http.MethodGet
 	url := "https://example.com"
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		t.Fatal("AddAuthHeader() fails to instantiate request")
+		t.Fatal("AddOAuth2Header() fails to instantiate request")
 	}
 
-	req = AddAuthHeader(req)
+	req = AddOAuth2Header(req)
 
 	val, ok := req.Header["Authorization"]
 	if !ok {
-		t.Fatal("AddAuthHeader() contains no 'Authorization' header")
+		t.Fatal("AddOAuth2Header() contains no 'Authorization' header")
 	}
 
 	if len(val) != 1 {
-		t.Fatal("AddAuthHeader() contains malformed 'Authorization' header")
+		t.Fatal("AddOAuth2Header() contains malformed 'Authorization' header")
 	}
 
-	expect := fmt.Sprintf("bearer: %s", ServiceAccountToken())
+	expect := fmt.Sprintf("bearer: %s", ServiceAccountAccessToken())
 	if val[0] != expect {
-		t.Fatal("AddAuthHeader() contains invalid 'Authorization' header")
+		t.Fatal("AddOAuth2Header() contains invalid 'Authorization' header")
 	}
 }
 
