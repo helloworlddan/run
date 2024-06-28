@@ -24,11 +24,15 @@ func ensureInitClients() {
 	}
 }
 
+// AddClient is intended to store a pointer to an initialized API client under a
+// given key.
 func AddClient(name string, client any) {
 	ensureInitClients()
 	clients[name] = client
 }
 
+// GetClient is intended to retrieve a pointer to an initialized API for a given
+// key name.
 func GetClient(name string) (any, error) {
 	ensureInitClients()
 	client, ok := clients[name]
@@ -38,6 +42,8 @@ func GetClient(name string) (any, error) {
 	return client, nil
 }
 
+// ListClientNames returns a list of all available keys store in the global
+// clients store.
 func ListClientNames() []string {
 	ensureInitClients()
 	names := make([]string, 0, len(clients))

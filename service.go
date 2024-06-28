@@ -83,12 +83,14 @@ func ServeGRPC(shutdown func(context.Context), server *grpc.Server) error {
 func ServeHTTP(shutdown func(context.Context), server *http.Server) error {
 	if server == nil {
 		mux := http.DefaultServeMux
+		// Add default uptime check handler
 		mux.HandleFunc("GET /uptimez", func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte("OK"))
 		})
 		server = &http.Server{
-			Addr:    net.JoinHostPort("0.0.0.0", ServicePort()),
+			Addr: net.JoinHostPort("0.0.0.0", ServicePort()),
+			// Support HTTP2
 			Handler: http2clear.NewHandler(mux, &http2.Server{}),
 		}
 	}

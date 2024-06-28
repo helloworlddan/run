@@ -25,11 +25,13 @@ func ensureInitConfig() {
 	}
 }
 
+// PutConfig adds a K/V pair to the global config store.
 func PutConfig(key string, val string) {
 	ensureInitConfig()
 	config[key] = val
 }
 
+// GetConfig retrieves a value for a key from the global config store.
 func GetConfig(key string) (string, error) {
 	ensureInitConfig()
 	val, ok := config[key]
@@ -39,6 +41,8 @@ func GetConfig(key string) (string, error) {
 	return val, nil
 }
 
+// ListConfigKeys returns a list of all currently available keys in the global
+// config store.
 func ListConfigKeys() []string {
 	ensureInitConfig()
 	keys := make([]string, 0, len(config))
@@ -48,6 +52,8 @@ func ListConfigKeys() []string {
 	return keys
 }
 
+// LoadConfig lookups the named environment variable, puts it's value into
+// the global config store and returns the value.
 func LoadConfig(env string) (string, error) {
 	ensureInitConfig()
 	val := os.Getenv(env)

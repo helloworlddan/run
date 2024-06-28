@@ -41,40 +41,11 @@ type instance struct {
 
 var this instance // NOTE: acts as cache
 
-func Name() string {
-	name := ServiceName()
-	if name != "local" {
-		return name
-	}
-	name = JobName()
-	if name != "local" {
-		return name
-	}
-	return "local"
-}
-
-func ServiceName() string {
-	if this.serviceName != "" {
-		return this.serviceName
-	}
-	this.serviceName = os.Getenv("K_SERVICE")
-	if this.serviceName == "" {
-		this.serviceName = "local"
-	}
-	return this.serviceName
-}
-
-func JobName() string {
-	if this.jobName != "" {
-		return this.jobName
-	}
-	this.jobName = os.Getenv("CLOUD_RUN_JOB")
-	if this.jobName == "" {
-		this.jobName = "local"
-	}
-	return this.jobName
-}
-
+// ID returns the unique instance ID of the Cloud Run instance serving the
+// running job or service by refering to the metadata server.
+//
+// If the current process does not seem to be hosted on Cloud Run, it will
+// simply return `000000`.
 func ID() string {
 	if this.id != "" {
 		return this.id
@@ -87,6 +58,57 @@ func ID() string {
 	return this.id
 }
 
+// Name returns a preferred name for the currently running Cloud Run service or
+// job. This will be either the service or job name or simply 'local'.
+func Name() string {
+	name := ServiceName()
+	if name != "local" {
+		return name
+	}
+	name = JobName()
+	if name != "local" {
+		return name
+	}
+	return "local"
+}
+
+// ServiceName returns the name of the currently running Cloud Run service by
+// looking up the `K_SERVICE` environment variable.
+//
+// If the current process does not seem to be hosted on Cloud Run, it will
+// simply return `local`.
+func ServiceName() string {
+	if this.serviceName != "" {
+		return this.serviceName
+	}
+	this.serviceName = os.Getenv("K_SERVICE")
+	if this.serviceName == "" {
+		this.serviceName = "local"
+	}
+	return this.serviceName
+}
+
+// JobName returns the name of the currently running Cloud Run job by
+// looking up the `CLOUD_RUN_JOB` environment variable.
+//
+// If the current process does not seem to be hosted on Cloud Run, it will
+// simply return `local`.
+func JobName() string {
+	if this.jobName != "" {
+		return this.jobName
+	}
+	this.jobName = os.Getenv("CLOUD_RUN_JOB")
+	if this.jobName == "" {
+		this.jobName = "local"
+	}
+	return this.jobName
+}
+
+// ServiceRevision returns the revision identifier of the currently running
+// Cloud Run service by looking up the `K_REVISION` environment variable.
+//
+// If the current process does not seem to be hosted on Cloud Run, it will
+// return a deterministic identifier in the form of `<SERVICE_NAME>-00001-xxx`.
 func ServiceRevision() string {
 	if this.serviceRevision != "" {
 		return this.serviceRevision
@@ -98,6 +120,8 @@ func ServiceRevision() string {
 	return this.serviceRevision
 }
 
+// JobExecution returns the execution identifier of the currently running
+// Cloud Run job by looking up the `CLOUD_RUN_EXECUTION` environment variable.
 func JobExecution() string {
 	if this.jobExecution != "" {
 		return this.jobExecution
@@ -109,6 +133,13 @@ func JobExecution() string {
 	return this.jobExecution
 }
 
+// ProjectID attempts to resolve the alpha-numeric Google Cloud project ID that
+// is hosting the current Cloud Run instance.
+//
+// It loosely does so by looking up the following established precedence:
+// - The environment variable `GOOGLE_CLOUD_PROJECT`
+// - Querying the metadata server
+// - Simply returning `local`
 func ProjectID() string {
 	if this.projectID != "" {
 		return this.projectID
@@ -125,6 +156,11 @@ func ProjectID() string {
 	return this.projectID
 }
 
+// ProjectNumber looks up the numeric project number of the current Google Cloud
+// project hosting the Cloud Run instance.
+//
+// If the current process does not seem to be hosted on Cloud Run, it will
+// return `000000000000`.
 func ProjectNumber() string {
 	if this.projectNumber != "" {
 		return this.projectNumber
@@ -137,6 +173,11 @@ func ProjectNumber() string {
 	return this.projectNumber
 }
 
+// ProjectNumber looks up the Google Cloud region in which the current Cloud
+// Run instance seems to be running.
+//
+// If the current process does not seem to be hosted on Cloud Run, it will
+// return `local`.
 func Region() string {
 	if this.region != "" {
 		return this.region
@@ -149,6 +190,11 @@ func Region() string {
 	return this.region
 }
 
+// ServiceAccountEmail looks up and returns the email of the service account
+// configured for this Cloud Run instance.
+//
+// If the current process does not seem to be hosted on Cloud Run, it will
+// return `local@localhost.com`.
 func ServiceAccountEmail() string {
 	if this.serviceAccountEmail != "" {
 		return this.serviceAccountEmail
@@ -161,6 +207,11 @@ func ServiceAccountEmail() string {
 	return this.serviceAccountEmail
 }
 
+// ServiceAccountAccessToken looks up and returns a fresh OAuth2 access token
+// for the service account configured for this Cloud Run instance.
+//
+// If the current process does not seem to be hosted on Cloud Run, it will
+// return `local-access-token`.
 func ServiceAccountAccessToken() string {
 	token, err := metadata("instance/service-accounts/default/token")
 	if err != nil {
@@ -169,6 +220,20 @@ func ServiceAccountAccessToken() string {
 	return token
 }
 
+// AddOAuth2Header injects an `Authorization` header  with a valid access token
+// for the configured service account into the supplied HTTP request and returns
+// it.
+func AddOAuth2Header(r *http.Request) *http.Request {
+	token := ServiceAccountAccessToken()
+	r.Header.Add("Authorization", fmt.Sprintf("bearer: %s", token))
+	return r
+}
+
+// ServiceAccountIdentityToken attempts to mint an OIDC Identity Token for the
+// specified `audience` using the metadata server.
+//
+// If the current process does not seem to be hosted on Cloud Run, it will
+// return `local-identity-token`.
 func ServiceAccountIdentityToken(audience string) string {
 	token, err := metadata(fmt.Sprintf("instance/service-accounts/default/identity?audience=%s", audience))
 	if err != nil {
@@ -177,6 +242,20 @@ func ServiceAccountIdentityToken(audience string) string {
 	return token
 }
 
+// AddOIDCHeader injects an `Authorization` header  with a valid identity token
+// for the configured service account into the supplied HTTP request and returns
+// it.
+func AddOIDCHeader(r *http.Request, audience string) *http.Request {
+	token := ServiceAccountIdentityToken(audience)
+	r.Header.Add("Authorization", fmt.Sprintf("bearer: %s", token))
+	return r
+}
+
+// ServicePort looks up and returns the configured service `$PORT` for
+// this Cloud Run service.
+//
+// If the current process does not seem to be hosted on Cloud Run, it will
+// return the default value `8080`.
 func ServicePort() string {
 	if this.servicePort != "" {
 		return this.servicePort
@@ -188,6 +267,11 @@ func ServicePort() string {
 	return this.servicePort
 }
 
+// JobTaskIndex looks up and returns the current task index for the running
+// Cloud Run job.
+//
+// If the current process does not seem to be hosted on Cloud Run, it will
+// sumply return `-1`.
 func JobTaskIndex() int {
 	if this.jobTaskIndex != 0 {
 		return this.jobTaskIndex
@@ -200,6 +284,11 @@ func JobTaskIndex() int {
 	return this.jobTaskIndex
 }
 
+// JobTaskAttempt looks up and returns the current task attempt for the running
+// Cloud Run job.
+//
+// If the current process does not seem to be hosted on Cloud Run, it will
+// sumply return `-1`.
 func JobTaskAttempt() int {
 	if this.jobTaskAttempt != 0 {
 		return this.jobTaskAttempt
@@ -212,6 +301,11 @@ func JobTaskAttempt() int {
 	return this.jobTaskAttempt
 }
 
+// JobTaskCount looks up and returns the current task count for the running
+// Cloud Run job.
+//
+// If the current process does not seem to be hosted on Cloud Run, it will
+// sumply return `-1`.
 func JobTaskCount() int {
 	if this.jobTaskCount != 0 {
 		return this.jobTaskCount
@@ -222,18 +316,6 @@ func JobTaskCount() int {
 		this.jobTaskCount = -1
 	}
 	return this.jobTaskCount
-}
-
-func AddOAuth2Header(r *http.Request) *http.Request {
-	token := ServiceAccountAccessToken()
-	r.Header.Add("Authorization", fmt.Sprintf("bearer: %s", token))
-	return r
-}
-
-func AddOIDCHeader(r *http.Request, audience string) *http.Request {
-	token := ServiceAccountIdentityToken(audience)
-	r.Header.Add("Authorization", fmt.Sprintf("bearer: %s", token))
-	return r
 }
 
 func metadata(path string) (string, error) {
