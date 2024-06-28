@@ -69,7 +69,9 @@ func ServeGRPC(shutdown func(context.Context), server *grpc.Server) error {
 	server.Stop()
 
 	// User-supplied shutdown
-	shutdown(ctx)
+	if shutdown != nil {
+		shutdown(ctx)
+	}
 
 	Info(nil, "shutdown complete")
 	return nil
@@ -123,7 +125,9 @@ func ServeHTTP(shutdown func(context.Context), server *http.Server) error {
 	}
 
 	// User-supplied shutdown
-	shutdown(ctx)
+	if shutdown != nil {
+		shutdown(ctx)
+	}
 
 	Info(nil, "shutdown complete")
 	return nil
