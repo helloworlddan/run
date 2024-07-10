@@ -160,3 +160,4 @@ func main() {
 ## TODO
 
 - Deal with local develop on GCE, with metadata server available
+- Generic way to instantiate clients with sync.Once ?
