@@ -14,9 +14,16 @@ package run
 
 import (
 	"fmt"
+	"sync"
 )
 
-var clients map[string]any
+var clients map[string]*lazyClient
+
+type lazyClient struct {
+	clientPtr      any
+	lazyInitialize func()
+	clientOnce     sync.Once
+}
 
 func ensureInitClients() {
 	if clients == nil {
@@ -28,18 +35,38 @@ func ensureInitClients() {
 // given key.
 func AddClient(name string, client any) {
 	ensureInitClients()
-	clients[name] = client
+	clients[name] = &lazyClient{
+		client,
+		nil,
+		sync.Once{},
+	}
+}
+
+// AddClient is intended to store a pointer to an initialized API client under a
+// given key.
+func AddLazyClient(name string, client any, lazyInit func()) {
+	ensureInitClients()
+	clients[name] = &lazyClient{
+		client,
+		lazyInit,
+		sync.Once{},
+	}
 }
 
 // GetClient is intended to retrieve a pointer to an initialized API for a given
 // key name.
 func GetClient(name string) (any, error) {
 	ensureInitClients()
-	client, ok := clients[name]
+	lc, ok := clients[name]
 	if !ok {
-		return "", fmt.Errorf("no client found for name: '%s'", name)
+		return nil, fmt.Errorf("no client found for name: '%s'", name)
 	}
-	return client, nil
+
+	if lc.lazyInitialize != nil {
+		lc.clientOnce.Do(lc.lazyInitialize)
+	}
+
+	return lc.clientPtr, nil
 }
 
 // ListClientNames returns a list of all available keys store in the global
@@ -54,5 +81,5 @@ func ListClientNames() []string {
 }
 
 func resetClients() {
-	clients = make(map[string]any)
+	clients = make(map[string]*lazyClient)
 }
