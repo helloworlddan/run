@@ -72,6 +72,8 @@ func UseClient[T any](name string, client T) (T, error) {
 	return actual, nil
 }
 
+// TODO: build client in use for Close()
+
 // ListClientNames returns a list of all available keys store in the global
 // clients store.
 func ListClientNames() []string {
