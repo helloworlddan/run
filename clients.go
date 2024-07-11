@@ -30,8 +30,18 @@ type lazyClient struct {
 
 func ensureInitClients() {
 	if clients == nil {
-		resetClients()
+		ResetClients()
 	}
+}
+
+// ResetClients deletes all previously configured clients.
+func ResetClients() {
+	clients = make(map[string]*lazyClient)
+}
+
+// CountClients returns number of stored clients.
+func CountClients() int {
+	return len(clients)
 }
 
 // StoreClient is intended to store a pointer to a client under a given key.
@@ -72,8 +82,6 @@ func UseClient[T any](name string, client T) (T, error) {
 	return actual, nil
 }
 
-// TODO: build client in use for Close()
-
 // ListClientNames returns a list of all available keys store in the global
 // clients store.
 func ListClientNames() []string {
@@ -84,8 +92,4 @@ func ListClientNames() []string {
 	}
 	slices.Sort(names)
 	return names
-}
-
-func resetClients() {
-	clients = make(map[string]*lazyClient)
 }

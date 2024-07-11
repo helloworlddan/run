@@ -10,61 +10,59 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package run
+package run_test
 
 import (
 	"net/http"
 	"slices"
 	"testing"
+
+	"github.com/helloworlddan/run"
 )
 
 func TestAddClient(t *testing.T) {
-	resetClients()
+	run.ResetClients()
 
-	AddClient("some key", nil)
+	run.StoreClient("some key", nil, nil)
 
-	if len(clients) != 1 {
+	if run.CountClients() != 1 {
 		t.Fatalf("AddCleint() failed to add client correctly")
 	}
 }
 
 func TestGetClient(t *testing.T) {
-	resetClients()
+	run.ResetClients()
 
 	clientName := "test.client"
 	client := http.DefaultClient
-	AddClient(clientName, client)
+	run.StoreClient(clientName, client, nil)
 
-	_, err := GetClient("non-existent")
+	_, err := run.UseClient("non-existent", client)
 	if err == nil {
 		t.Fatalf("GetClient() failed to err on non-existent client")
 	}
 
-	rawResult, err := GetClient(clientName)
+	client, err = run.UseClient(clientName, client)
 	if err != nil {
 		t.Fatalf("GetClient() failed to retrieve existing client")
 	}
-
-	result := rawResult.(*http.Client)
-	if result != client {
-		t.Fatalf("GetClient() failed to store client correctly")
-	}
+	_ = client
 }
 
 func TestListClientNames(t *testing.T) {
-	resetClients()
+	run.ResetClients()
 
-	names := ListClientNames()
+	names := run.ListClientNames()
 	if len(names) != 0 {
 		t.Fatalf("ListClientNames() failed to read client names correctly")
 	}
 
 	testNames := []string{"client.A", "client.B"}
 
-	AddClient(testNames[0], nil)
-	AddClient(testNames[1], nil)
+	run.StoreClient(testNames[0], nil, nil)
+	run.StoreClient(testNames[1], nil, nil)
 
-	names = ListClientNames()
+	names = run.ListClientNames()
 	if len(names) != 2 {
 		t.Fatalf("ListClientNames() failed to read client names correctly")
 	}

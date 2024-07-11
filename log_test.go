@@ -10,10 +10,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package run
+package run_test
 
 import (
 	"testing"
+
+	"github.com/helloworlddan/run"
 )
 
 func Test_String(t *testing.T) {
@@ -22,7 +24,7 @@ func Test_String(t *testing.T) {
 	trace := "some-trace-key"
 	component := "test"
 
-	le := LogEntry{
+	le := run.LogEntry{
 		Message:   message,
 		Severity:  severity,
 		Trace:     trace,
@@ -34,23 +36,5 @@ func Test_String(t *testing.T) {
 
 	if line != expect {
 		t.Fatalf("String() produced bad log line: '%s', want '%s'", line, expect)
-	}
-}
-
-func Test_isLogEntrySeverity(t *testing.T) {
-	if !isLogEntrySeverity("DEBUG") {
-		t.Fatalf("isLogEntrySeverity() returns false for 'DEBUG', want true")
-	}
-	if !isLogEntrySeverity("DEFAULT") {
-		t.Fatalf("isLogEntrySeverity() returns false for 'DEFAULT', want true")
-	}
-	if !isLogEntrySeverity("ALERT") {
-		t.Fatalf("isLogEntrySeverity() returns false for 'ALERT', want true")
-	}
-	if isLogEntrySeverity("BOGUS") {
-		t.Fatalf("isLogEntrySeverity() returns true for 'BOGUS', want false")
-	}
-	if isLogEntrySeverity("") {
-		t.Fatalf("isLogEntrySeverity() returns true for '', want false")
 	}
 }

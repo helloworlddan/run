@@ -41,8 +41,13 @@ type instance struct {
 
 var this instance // NOTE: acts as cache
 
+// ResetInstance resets the cached metadata of this instance
+func ResetInstance() {
+	this = instance{}
+}
+
 // ID returns the unique instance ID of the Cloud Run instance serving the
-// running job or service by refering to the metadata server.
+// running job or service by referring to the metadata server.
 //
 // If the current process does not seem to be hosted on Cloud Run, it will
 // simply return `000000`.
@@ -133,7 +138,7 @@ func JobExecution() string {
 	return this.jobExecution
 }
 
-// ProjectID attempts to resolve the alpha-numeric Google Cloud project ID that
+// ProjectID attempts to resolve the alphanumeric Google Cloud project ID that
 // is hosting the current Cloud Run instance.
 //
 // It loosely does so by looking up the following established precedence:
@@ -340,8 +345,4 @@ func metadata(path string) (string, error) {
 	}
 
 	return strings.TrimSpace(string(raw)), nil
-}
-
-func resetInstance() {
-	this = instance{}
 }

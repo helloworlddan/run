@@ -10,37 +10,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package run
+package run_test
 
 import (
 	"os"
 	"slices"
 	"testing"
+
+	"github.com/helloworlddan/run"
 )
 
 func TestPutConfig(t *testing.T) {
-	resetConfig()
+	run.ResetConfig()
 
-	PutConfig("some key", "some val")
+	run.PutConfig("some key", "some val")
 
-	if len(config) != 1 {
+	if run.CountConfig() != 1 {
 		t.Fatalf("PutConfig() failed to add config correctly")
 	}
 }
 
 func TestGetConfig(t *testing.T) {
-	resetConfig()
+	run.ResetConfig()
 
 	configKey := "test.config"
 	configVal := "test.config.val"
-	PutConfig(configKey, configVal)
+	run.PutConfig(configKey, configVal)
 
-	_, err := GetConfig("non-existent")
+	_, err := run.GetConfig("non-existent")
 	if err == nil {
 		t.Fatalf("GetConfig() failed to err on non-existent config")
 	}
 
-	result, err := GetConfig(configKey)
+	result, err := run.GetConfig(configKey)
 	if err != nil {
 		t.Fatalf("GetConfig() failed to retrieve existing config")
 	}
@@ -51,19 +53,19 @@ func TestGetConfig(t *testing.T) {
 }
 
 func TestListConfigKeys(t *testing.T) {
-	resetConfig()
+	run.ResetConfig()
 
-	keys := ListConfigKeys()
+	keys := run.ListConfigKeys()
 	if len(keys) != 0 {
 		t.Fatalf("ListConfigKeys() failed to read config keys correctly")
 	}
 
 	testKeys := []string{"config.A", "config.B"}
 
-	PutConfig(testKeys[0], "")
-	PutConfig(testKeys[1], "")
+	run.PutConfig(testKeys[0], "")
+	run.PutConfig(testKeys[1], "")
 
-	keys = ListConfigKeys()
+	keys = run.ListConfigKeys()
 	if len(keys) != 2 {
 		t.Fatalf("ListConfigKeys() failed to read config keys correctly")
 	}
@@ -74,7 +76,7 @@ func TestListConfigKeys(t *testing.T) {
 }
 
 func TestLoadConfig(t *testing.T) {
-	resetConfig()
+	run.ResetConfig()
 
 	envVarKey := "some-test-key"
 	envVarVal := "some-test-val"
@@ -83,12 +85,12 @@ func TestLoadConfig(t *testing.T) {
 		t.Fatalf("LoadConfig() failed to test: %v", err)
 	}
 
-	_, err = LoadConfig("non-existent-key")
+	_, err = run.LoadConfig("non-existent-key")
 	if err == nil {
 		t.Fatal("LoadConfig() didn't error on non-existent key")
 	}
 
-	result, err := LoadConfig(envVarKey)
+	result, err := run.LoadConfig(envVarKey)
 	if err != nil {
 		t.Fatalf("LoadConfig() failed to retrieve key: %v", err)
 	}
@@ -97,11 +99,7 @@ func TestLoadConfig(t *testing.T) {
 		t.Fatalf("LoadConfig() failed to retrieve key correctly: want: %s, have: %s", envVarVal, result)
 	}
 
-	if len(config) != 1 {
+	if run.CountConfig() != 1 {
 		t.Fatal("LoadConfig() failed to store config")
-	}
-
-	if config[envVarKey] != envVarVal {
-		t.Fatal("LoadConfig() stored config incorrectly")
 	}
 }

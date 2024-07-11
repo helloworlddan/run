@@ -21,8 +21,18 @@ var config map[string]string
 
 func ensureInitConfig() {
 	if config == nil {
-		resetConfig()
+		ResetConfig()
 	}
+}
+
+// ResetConfig deletes all previously configured config.
+func ResetConfig() {
+	config = make(map[string]string)
+}
+
+// CountConfig returns number of stored config elements.
+func CountConfig() int {
+	return len(config)
 }
 
 // PutConfig adds a K/V pair to the global config store.
@@ -64,8 +74,4 @@ func LoadConfig(env string) (string, error) {
 	PutConfig(env, val)
 
 	return val, nil
-}
-
-func resetConfig() {
-	config = make(map[string]string)
 }
