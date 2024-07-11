@@ -40,9 +40,9 @@ func main() {
    run.Error(nil, err)
   }
  }
- run.AddLazyClient("bigquery", bqClient, lazyInit)
+ run.StoreClient("bigquery", bqClient, lazyInit)
 
- // Define shutdown behavior
+ // Define shutdown behavior and serve HTTP
  shutdown := func(ctx context.Context) {
   run.Debug(nil, "shutting down connections...")
   time.Sleep(time.Second * 1) // Pretending to clean up
@@ -58,6 +58,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
  fmt.Fprintf(w, "Name: %s\n", run.ServiceName())
  fmt.Fprintf(w, "Revision: %s\n", run.ServiceRevision())
  fmt.Fprintf(w, "ProjectID: %s\n", run.ProjectID())
+
  // Access config
  cfg, err := run.GetConfig("some-key")
  if err != nil {
@@ -65,13 +66,13 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
  }
 
  // Access client
- clientRef, err := run.GetClient("bigquery")
+ var client *bigquery.Client
+ client, err = run.UseClient("bigquery", client)
  if err != nil {
   run.Error(nil, err)
  }
- bqClient := clientRef.(*bigquery.Client)
  // NOTE: use client
- _ = bqClient
+ _ = client
 
  fmt.Fprintf(w, "Config[some-key]: %s\n", cfg)
  run.Debugf(r, "request completed")
@@ -158,15 +159,16 @@ func main() {
  if err != nil {
   run.Error(nil, err)
  }
- run.AddClient("bigquery", bqClient)
+ run.StoreClient("bigquery", bqClient, nil)
  defer bqClient.Close()
 
  // Later usage
- clientRef, err := run.GetClient("bigquery")
+ var bqClient2 *bigquery.Client
+ bqClient2, err = run.UseClient("bigquery", bqClient2)
  if err != nil {
   run.Error(nil, err)
  }
- bqClient2 := clientRef.(*bigquery.Client)
+
  _ = bqClient2
 
  // Make service account authenticated requests
