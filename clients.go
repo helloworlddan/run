@@ -14,6 +14,8 @@ package run
 
 import (
 	"fmt"
+	"reflect"
+	"slices"
 	"sync"
 )
 
@@ -21,6 +23,7 @@ var clients map[string]*lazyClient
 
 type lazyClient struct {
 	clientPtr      any
+	clientType     reflect.Type
 	lazyInitialize func()
 	clientOnce     sync.Once
 }
@@ -31,42 +34,42 @@ func ensureInitClients() {
 	}
 }
 
-// AddClient is intended to store a pointer to an initialized API client under a
-// given key.
-func AddClient(name string, client any) {
+// StoreClient is intended to store a pointer to a client under a given key.
+// The caller can optionally specify lazyInit to be run once before the client
+// is retrieved using run.UseClient for the first time. If lazyInit is nil, the
+// client should be initialized before storing it.
+func StoreClient(name string, client any, lazyInit func()) {
 	ensureInitClients()
 	clients[name] = &lazyClient{
 		client,
-		nil,
-		sync.Once{},
-	}
-}
-
-// AddClient is intended to store a pointer to an initialized API client under a
-// given key.
-func AddLazyClient(name string, client any, lazyInit func()) {
-	ensureInitClients()
-	clients[name] = &lazyClient{
-		client,
+		reflect.TypeOf(client),
 		lazyInit,
 		sync.Once{},
 	}
 }
 
-// GetClient is intended to retrieve a pointer to an initialized API for a given
-// key name.
-func GetClient(name string) (any, error) {
+// GetClient is intended to retrieve a pointer to a client for a given key name.
+// I requires the name of a stored client and a nil pointer of it's type.
+func UseClient[T any](name string, client T) (T, error) {
 	ensureInitClients()
 	lc, ok := clients[name]
 	if !ok {
-		return nil, fmt.Errorf("no client found for name: '%s'", name)
+		return client, fmt.Errorf("no client found for name: '%s'", name)
 	}
 
+	if reflect.TypeOf(client) != lc.clientType {
+		return client, fmt.Errorf("wrong type requested for client name: '%s'", name)
+	}
+
+	// Do lazy initialization
 	if lc.lazyInitialize != nil {
 		lc.clientOnce.Do(lc.lazyInitialize)
 	}
 
-	return lc.clientPtr, nil
+	v := reflect.ValueOf(lc.clientPtr)
+	actual := v.Interface().(T)
+
+	return actual, nil
 }
 
 // ListClientNames returns a list of all available keys store in the global
@@ -77,6 +80,7 @@ func ListClientNames() []string {
 	for name := range clients {
 		names = append(names, name)
 	}
+	slices.Sort(names)
 	return names
 }
 
