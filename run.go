@@ -71,7 +71,7 @@ func Name() string {
 		return name
 	}
 	name = JobName()
-	if name != "local" {
+	if name != "local" { // redundant check, but more obvious when reading
 		return name
 	}
 	return "local"
