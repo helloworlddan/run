@@ -186,7 +186,3 @@ func main() {
  // read response
 }
 ```
-
-## TODO
-
-- Deal with local develop on GCE, with metadata server available
