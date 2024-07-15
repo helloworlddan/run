@@ -25,7 +25,7 @@ type lazyClient struct {
 	clientPtr      any
 	clientType     reflect.Type
 	lazyInitialize func()
-	clientOnce     sync.Once
+	clientOnce     *sync.Once
 }
 
 func ensureInitClients() {
@@ -54,7 +54,7 @@ func StoreClient(name string, client any, lazyInit func()) {
 		client,
 		reflect.TypeOf(client),
 		lazyInit,
-		sync.Once{},
+		&sync.Once{},
 	}
 }
 
@@ -62,11 +62,19 @@ func StoreClient(name string, client any, lazyInit func()) {
 // I requires the name of a stored client and a nil pointer of it's type.
 func UseClient[T any](name string, client T) (T, error) {
 	ensureInitClients()
+
+	// Check if client is a pointer
+	if reflect.ValueOf(client).Kind() != reflect.Ptr {
+		return client, fmt.Errorf("expected pointer to client, but got %T", client)
+	}
+
+	// Check if client is known
 	lc, ok := clients[name]
 	if !ok {
 		return client, fmt.Errorf("no client found for name: '%s'", name)
 	}
 
+	// Check if requested pointer type matches stored pointer type
 	if reflect.TypeOf(client) != lc.clientType {
 		return client, fmt.Errorf("wrong type requested for client name: '%s'", name)
 	}
@@ -77,7 +85,14 @@ func UseClient[T any](name string, client T) (T, error) {
 	}
 
 	v := reflect.ValueOf(lc.clientPtr)
-	actual := v.Interface().(T)
+	if v.IsZero() {
+		return client, fmt.Errorf("stored client is still nil after initialization: %#v", lc.clientPtr)
+	}
+
+	actual, ok := v.Interface().(T)
+	if !ok {
+		return client, fmt.Errorf("failed to cast stored client to requested type: %T", actual)
+	}
 
 	return actual, nil
 }

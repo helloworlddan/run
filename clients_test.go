@@ -20,33 +20,50 @@ import (
 	"github.com/helloworlddan/run"
 )
 
-func TestAddClient(t *testing.T) {
+func TestStoreClient(t *testing.T) {
 	run.ResetClients()
 
 	run.StoreClient("some key", nil, nil)
 
 	if run.CountClients() != 1 {
-		t.Fatalf("AddCleint() failed to add client correctly")
+		t.Fatalf("StoreClient() failed to add client correctly")
 	}
 }
 
-func TestGetClient(t *testing.T) {
+// BUG: Possible concurrent access issue
+func TestUseClient(t *testing.T) {
 	run.ResetClients()
 
 	clientName := "test.client"
-	client := http.DefaultClient
-	run.StoreClient(clientName, client, nil)
+	storedClient := http.DefaultClient
+	run.StoreClient(clientName, storedClient, nil)
 
-	_, err := run.UseClient("non-existent", client)
+	_, err := run.UseClient("non-existent", storedClient)
 	if err == nil {
-		t.Fatalf("GetClient() failed to err on non-existent client")
+		t.Fatalf("UseClient() failed to err on non-existent client")
 	}
 
-	client, err = run.UseClient(clientName, client)
+	var requestedClient *http.Client
+	requestedClient, err = run.UseClient(clientName, storedClient)
 	if err != nil {
-		t.Fatalf("GetClient() failed to retrieve existing client")
+		t.Fatalf("UseClient() failed to retrieve existing client")
 	}
-	_ = client
+
+	if requestedClient != storedClient {
+		t.Fatalf("UseClient() failed to retrieve existing client")
+	}
+
+	requestedClient = nil
+	requestedClient, err = run.UseClient(clientName, storedClient)
+	if err != nil {
+		t.Fatalf("UseClient() failed to retrieve existing client")
+	}
+
+	if requestedClient != storedClient {
+		t.Fatalf("UseClient() failed to retrieve existing client")
+	}
+
+	_ = storedClient
 }
 
 func TestListClientNames(t *testing.T) {
