@@ -27,41 +27,35 @@ type FakeClient struct {
 func TestStoreClient(t *testing.T) {
 	run.ResetClients()
 
-	run.StoreClient("some key", nil, nil)
+	run.Client("some key", "some client")
 
 	if run.CountClients() != 1 {
 		t.Fatalf("StoreClient() failed to add client correctly")
 	}
 }
 
-// BUG: Possible concurrent access issue
 func TestUseClient(t *testing.T) {
 	run.ResetClients()
 
-	var storedClient *FakeClient
-	run.StoreClient("fake", storedClient, func() {
-		storedClient = &FakeClient{
-			id:          "fake",
-			initialized: true,
-		}
-		run.InitializeClient("fake", &FakeClient{
+	run.LazyClient("fake", func() {
+		run.Client("fake", &FakeClient{
 			id:          "fake",
 			initialized: true,
 		})
 	})
 
-	var requestedClient *FakeClient
-	requestedClient, err := run.UseClient("fake", requestedClient)
+	var client *FakeClient
+	client, err := run.UseClient("fake", client)
 	if err != nil {
+		t.Fatalf("failed to retrieve client, err: %v", err)
+	}
+
+	if client == nil {
 		t.Fatal("failed to retrieve client")
 	}
 
-	if requestedClient == nil {
+	if !client.initialized {
 		t.Fatal("failed to retrieve client")
-	}
-
-	if !requestedClient.initialized {
-		t.Fatal("failed to initialize client")
 	}
 }
 
@@ -75,8 +69,8 @@ func TestListClientNames(t *testing.T) {
 
 	testNames := []string{"client.A", "client.B"}
 
-	run.StoreClient(testNames[0], nil, nil)
-	run.StoreClient(testNames[1], nil, nil)
+	run.Client(testNames[0], testNames[0])
+	run.Client(testNames[1], testNames[1])
 
 	names = run.ListClientNames()
 	if len(names) != 2 {
