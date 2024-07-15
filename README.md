@@ -30,7 +30,7 @@ func main() {
 
  // Store client with lazy initialization
  var bqClient *bigquery.Client
- lazyInit := func() {
+ run.LazyClient("bigquery", func() {
   run.Debug(nil, "lazy init: bigquery")
   var err error
   ctx := context.Background()
@@ -38,18 +38,17 @@ func main() {
   if err != nil {
    run.Error(nil, err)
   }
- }
- run.StoreClient("bigquery", bqClient, lazyInit)
+  run.Client("bigquery", bqClient)
+ })
 
  // Define shutdown behavior and serve HTTP
- shutdown := func(ctx context.Context) {
+ err := run.ServeHTTP(func(ctx context.Context) {
   run.Debug(nil, "shutting down connections...")
   if bqClient != nil { // Maybe nil due to lazy loading
    bqClient.Close()
   }
   run.Debug(nil, "connections closed")
- }
- err := run.ServeHTTP(shutdown, nil)
+ }, nil)
  if err != nil {
   run.Fatal(nil, err)
  }
@@ -101,13 +100,11 @@ func main() {
  server := grpc.NewServer()
  runclock.RegisterRunClockServer(server, clockServer{})
 
- shutdown := func(ctx context.Context) {
+ err := run.ServeGRPC(func(ctx context.Context) {
   run.Debug(nil, "shutting down connections...")
   time.Sleep(time.Second * 1) // Pretending to clean up
   run.Debug(nil, "connections closed")
- }
-
- err := run.ServeGRPC(shutdown, server)
+ }, server)
  if err != nil {
   run.Fatal(nil, err)
  }
@@ -160,7 +157,7 @@ func main() {
  if err != nil {
   run.Error(nil, err)
  }
- run.StoreClient("bigquery", bqClient, nil)
+ run.Client("bigquery", bqClient)
  defer bqClient.Close()
 
  // Later usage

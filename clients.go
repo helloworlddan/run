@@ -82,10 +82,13 @@ func UseClient[T any](name string, client T) (T, error) {
 		return client, fmt.Errorf("no client found for name: '%s'", name)
 	}
 
-	if !lc.initialized {
-		lc.clientOnce.Do(lc.lazyInitialize)
+	if !lc.initialized && lc.lazyInitialize == nil {
+		return client, fmt.Errorf("cannot initialize client '%s'", name)
 	}
 
+	lc.clientOnce.Do(lc.lazyInitialize)
+
+	// refresh
 	lc, ok = clients[name]
 	if !ok {
 		return client, fmt.Errorf("no client found for name: '%s'", name)
@@ -95,6 +98,8 @@ func UseClient[T any](name string, client T) (T, error) {
 	if !ok {
 		return client, fmt.Errorf("failed to cast stored client to requested type: %T", actual)
 	}
+
+	client = actual
 
 	return actual, nil
 }
