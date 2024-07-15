@@ -23,9 +23,9 @@ var clients map[string]*lazyClient
 
 type lazyClient struct {
 	clientPtr      any
-	clientType     reflect.Type
 	lazyInitialize func()
 	clientOnce     *sync.Once
+	initialized    bool
 }
 
 func ensureInitClients() {
@@ -44,17 +44,26 @@ func CountClients() int {
 	return len(clients)
 }
 
-// StoreClient is intended to store a pointer to a client under a given key.
-// The caller can optionally specify lazyInit to be run once before the client
-// is retrieved using run.UseClient for the first time. If lazyInit is nil, the
-// client should be initialized before storing it.
-func StoreClient(name string, client any, lazyInit func()) {
+// Client registers and already initialized clients
+func Client(name string, client any) {
 	ensureInitClients()
 	clients[name] = &lazyClient{
 		client,
-		reflect.TypeOf(client),
-		lazyInit,
+		nil,
 		&sync.Once{},
+		true,
+	}
+}
+
+// LazyClient registers an uninitialized client name with an initialization
+// function. The init func should call Client() with the initialized client.
+func LazyClient(name string, init func()) {
+	ensureInitClients()
+	clients[name] = &lazyClient{
+		nil,
+		init,
+		&sync.Once{},
+		false,
 	}
 }
 
@@ -62,7 +71,6 @@ func StoreClient(name string, client any, lazyInit func()) {
 // I requires the name of a stored client and a nil pointer of it's type.
 func UseClient[T any](name string, client T) (T, error) {
 	ensureInitClients()
-
 	// Check if client is a pointer
 	if !isPointer(client) {
 		return client, fmt.Errorf("expected pointer to client, but got %T", client)
@@ -74,18 +82,13 @@ func UseClient[T any](name string, client T) (T, error) {
 		return client, fmt.Errorf("no client found for name: '%s'", name)
 	}
 
-	// Check if requested pointer type matches stored pointer type
-	if !sameType(client, lc.clientPtr) {
-		return client, fmt.Errorf("wrong type requested for client name: '%s'", name)
-	}
-
-	// Do lazy initialization
-	if lc.lazyInitialize != nil {
+	if !lc.initialized {
 		lc.clientOnce.Do(lc.lazyInitialize)
 	}
 
-	if lc.clientPtr == nil {
-		fmt.Println("clientPtr is nil")
+	lc, ok = clients[name]
+	if !ok {
+		return client, fmt.Errorf("no client found for name: '%s'", name)
 	}
 
 	actual, ok := lc.clientPtr.(T)
@@ -94,24 +97,6 @@ func UseClient[T any](name string, client T) (T, error) {
 	}
 
 	return actual, nil
-}
-
-func InitializeClient(name string, client any) error {
-	if len(name) == 0 {
-		return fmt.Errorf("empty name for client supplied")
-	}
-
-	if !isPointer(client) {
-		return fmt.Errorf("expected pointer for client")
-	}
-
-	lc, ok := clients[name]
-	if !ok {
-		return fmt.Errorf("no client found for name: '%s'", name)
-	}
-
-	lc.clientPtr = client
-	return nil
 }
 
 // ListClientNames returns a list of all available keys store in the global
@@ -124,10 +109,6 @@ func ListClientNames() []string {
 	}
 	slices.Sort(names)
 	return names
-}
-
-func sameType(a any, b any) bool {
-	return reflect.TypeOf(a) == reflect.TypeOf(b)
 }
 
 func isPointer(a any) bool {
