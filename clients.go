@@ -86,7 +86,9 @@ func UseClient[T any](name string, client T) (T, error) {
 		return client, fmt.Errorf("cannot initialize client '%s'", name)
 	}
 
-	lc.clientOnce.Do(lc.lazyInitialize)
+	if lc.lazyInitialize != nil {
+		lc.clientOnce.Do(lc.lazyInitialize)
+	}
 
 	// refresh
 	lc, ok = clients[name]
