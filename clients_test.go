@@ -13,12 +13,16 @@
 package run_test
 
 import (
-	"net/http"
 	"slices"
 	"testing"
 
 	"github.com/helloworlddan/run"
 )
+
+type FakeClient struct {
+	id          string
+	initialized bool
+}
 
 func TestStoreClient(t *testing.T) {
 	run.ResetClients()
@@ -34,36 +38,31 @@ func TestStoreClient(t *testing.T) {
 func TestUseClient(t *testing.T) {
 	run.ResetClients()
 
-	clientName := "test.client"
-	storedClient := http.DefaultClient
-	run.StoreClient(clientName, storedClient, nil)
+	var storedClient *FakeClient
+	run.StoreClient("fake", storedClient, func() {
+		storedClient = &FakeClient{
+			id:          "fake",
+			initialized: true,
+		}
+		run.InitializeClient("fake", &FakeClient{
+			id:          "fake",
+			initialized: true,
+		})
+	})
 
-	_, err := run.UseClient("non-existent", storedClient)
-	if err == nil {
-		t.Fatalf("UseClient() failed to err on non-existent client")
-	}
-
-	var requestedClient *http.Client
-	requestedClient, err = run.UseClient(clientName, storedClient)
+	var requestedClient *FakeClient
+	requestedClient, err := run.UseClient("fake", requestedClient)
 	if err != nil {
-		t.Fatalf("UseClient() failed to retrieve existing client")
+		t.Fatal("failed to retrieve client")
 	}
 
-	if requestedClient != storedClient {
-		t.Fatalf("UseClient() failed to retrieve existing client")
+	if requestedClient == nil {
+		t.Fatal("failed to retrieve client")
 	}
 
-	requestedClient = nil
-	requestedClient, err = run.UseClient(clientName, storedClient)
-	if err != nil {
-		t.Fatalf("UseClient() failed to retrieve existing client")
+	if !requestedClient.initialized {
+		t.Fatal("failed to initialize client")
 	}
-
-	if requestedClient != storedClient {
-		t.Fatalf("UseClient() failed to retrieve existing client")
-	}
-
-	_ = storedClient
 }
 
 func TestListClientNames(t *testing.T) {

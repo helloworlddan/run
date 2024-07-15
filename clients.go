@@ -64,7 +64,7 @@ func UseClient[T any](name string, client T) (T, error) {
 	ensureInitClients()
 
 	// Check if client is a pointer
-	if reflect.ValueOf(client).Kind() != reflect.Ptr {
+	if !isPointer(client) {
 		return client, fmt.Errorf("expected pointer to client, but got %T", client)
 	}
 
@@ -75,7 +75,7 @@ func UseClient[T any](name string, client T) (T, error) {
 	}
 
 	// Check if requested pointer type matches stored pointer type
-	if reflect.TypeOf(client) != lc.clientType {
+	if !sameType(client, lc.clientPtr) {
 		return client, fmt.Errorf("wrong type requested for client name: '%s'", name)
 	}
 
@@ -84,17 +84,34 @@ func UseClient[T any](name string, client T) (T, error) {
 		lc.clientOnce.Do(lc.lazyInitialize)
 	}
 
-	v := reflect.ValueOf(lc.clientPtr)
-	if v.IsZero() {
-		return client, fmt.Errorf("stored client is still nil after initialization: %#v", lc.clientPtr)
+	if lc.clientPtr == nil {
+		fmt.Println("clientPtr is nil")
 	}
 
-	actual, ok := v.Interface().(T)
+	actual, ok := lc.clientPtr.(T)
 	if !ok {
 		return client, fmt.Errorf("failed to cast stored client to requested type: %T", actual)
 	}
 
 	return actual, nil
+}
+
+func InitializeClient(name string, client any) error {
+	if len(name) == 0 {
+		return fmt.Errorf("empty name for client supplied")
+	}
+
+	if !isPointer(client) {
+		return fmt.Errorf("expected pointer for client")
+	}
+
+	lc, ok := clients[name]
+	if !ok {
+		return fmt.Errorf("no client found for name: '%s'", name)
+	}
+
+	lc.clientPtr = client
+	return nil
 }
 
 // ListClientNames returns a list of all available keys store in the global
@@ -107,4 +124,12 @@ func ListClientNames() []string {
 	}
 	slices.Sort(names)
 	return names
+}
+
+func sameType(a any, b any) bool {
+	return reflect.TypeOf(a) == reflect.TypeOf(b)
+}
+
+func isPointer(a any) bool {
+	return reflect.ValueOf(a).Kind() == reflect.Ptr
 }
