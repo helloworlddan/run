@@ -18,7 +18,7 @@ import (
 	"github.com/helloworlddan/run"
 )
 
-func Test_String(t *testing.T) {
+func TestString(t *testing.T) {
 	message := "this is a log message"
 	severity := "ALERT"
 	trace := "some-trace-key"

@@ -1,7 +1,9 @@
 # Run
 
 Package Run provides useful, yet opinionated integrations for workloads running
-on Cloud Run.
+on Cloud Run. It loosely follows the
+[general development tips](https://cloud.google.com/run/docs/tips/general) from
+the official documentation.
 
 ## Cloud Run Services
 

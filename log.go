@@ -21,6 +21,8 @@ import (
 	"strings"
 )
 
+// LogEntry is the structured version of a single log entry intended to be
+// stored in Google Cloud Logging in JSON-serialized form.
 type LogEntry struct {
 	Message  string `json:"message"`
 	Severity string `json:"severity,omitempty"`
@@ -34,6 +36,9 @@ type LogEntry struct {
 	Component string `json:"component,omitempty"`
 }
 
+// SourceLocation is the structured version of a location in the source code (at
+// compile time) which emits a log entry (at runtime). It is intended to be
+// embedded in a run.LogEntry in JSON-serialized form.
 type SourceLocation struct {
 	File     string `json:"file,omitempty"`
 	Function string `json:"function,omitempty"`
