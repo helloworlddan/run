@@ -103,3 +103,13 @@ func TestLoadConfig(t *testing.T) {
 		t.Fatal("LoadConfig() failed to store config")
 	}
 }
+
+func TestLoadAllConfig(t *testing.T) {
+	run.ResetConfig()
+
+	run.LoadAllConfig()
+
+	if run.CountConfig() == 0 {
+		t.Fatal("LoadAllConfig() failed to load anything")
+	}
+}

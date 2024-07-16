@@ -15,15 +15,10 @@ package run
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 var config map[string]string
-
-func ensureInitConfig() {
-	if config == nil {
-		ResetConfig()
-	}
-}
 
 // ResetConfig deletes all previously configured config.
 func ResetConfig() {
@@ -74,4 +69,22 @@ func LoadConfig(env string) (string, error) {
 	PutConfig(env, val)
 
 	return val, nil
+}
+
+// LoadAllConfig loads all available environment variables and puts it in the
+// config store.
+func LoadAllConfig() {
+	ensureInitConfig()
+	for _, pair := range os.Environ() {
+		key, value, ok := strings.Cut(pair, "=")
+		if ok {
+			PutConfig(key, value)
+		}
+	}
+}
+
+func ensureInitConfig() {
+	if config == nil {
+		ResetConfig()
+	}
 }

@@ -19,8 +19,6 @@ import (
 	"sync"
 )
 
-var clients map[string]*lazyClient
-
 type lazyClient struct {
 	clientPtr      any
 	lazyInitialize func()
@@ -28,11 +26,7 @@ type lazyClient struct {
 	initialized    bool
 }
 
-func ensureInitClients() {
-	if clients == nil {
-		ResetClients()
-	}
-}
+var clients map[string]*lazyClient
 
 // ResetClients deletes all previously configured clients.
 func ResetClients() {
@@ -41,10 +35,11 @@ func ResetClients() {
 
 // CountClients returns number of stored clients.
 func CountClients() int {
+	ensureInitClients()
 	return len(clients)
 }
 
-// Client registers and already initialized clients
+// Client registers an already initialized client.
 func Client(name string, client any) {
 	ensureInitClients()
 	clients[name] = &lazyClient{
@@ -67,8 +62,9 @@ func LazyClient(name string, init func()) {
 	}
 }
 
-// GetClient is intended to retrieve a pointer to a client for a given key name.
-// I requires the name of a stored client and a nil pointer of it's type.
+// UseClient is intended to retrieve a pointer to a client for a given key name.
+// It requires the name of a stored client and a nil pointer of it's type.
+// NOTE: maybe this shouldn't return T, just error...
 func UseClient[T any](name string, client T) (T, error) {
 	ensureInitClients()
 	// Check if client is a pointer
@@ -82,27 +78,29 @@ func UseClient[T any](name string, client T) (T, error) {
 		return client, fmt.Errorf("no client found for name: '%s'", name)
 	}
 
+	// check if it can be initialized
 	if !lc.initialized && lc.lazyInitialize == nil {
 		return client, fmt.Errorf("cannot initialize client '%s'", name)
 	}
 
+	// Synced initialization once
 	if lc.lazyInitialize != nil {
 		lc.clientOnce.Do(lc.lazyInitialize)
 	}
 
-	// refresh
+	// Refresh
 	lc, ok = clients[name]
 	if !ok {
 		return client, fmt.Errorf("no client found for name: '%s'", name)
 	}
 
+	// Cast to actual expected type
 	actual, ok := lc.clientPtr.(T)
 	if !ok {
 		return client, fmt.Errorf("failed to cast stored client to requested type: %T", actual)
 	}
 
 	client = actual
-
 	return actual, nil
 }
 
@@ -116,6 +114,12 @@ func ListClientNames() []string {
 	}
 	slices.Sort(names)
 	return names
+}
+
+func ensureInitClients() {
+	if clients == nil {
+		ResetClients()
+	}
 }
 
 func isPointer(a any) bool {

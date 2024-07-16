@@ -13,18 +13,19 @@
 package run_test
 
 import (
+	"net/http"
 	"slices"
 	"testing"
 
 	"github.com/helloworlddan/run"
 )
 
-type FakeClient struct {
+type fakeClient struct {
 	id          string
 	initialized bool
 }
 
-func TestStoreClient(t *testing.T) {
+func TestClient(t *testing.T) {
 	run.ResetClients()
 
 	run.Client("some key", "some client")
@@ -37,15 +38,27 @@ func TestStoreClient(t *testing.T) {
 func TestUseClient(t *testing.T) {
 	run.ResetClients()
 
+	run.Client("http", http.DefaultClient)
+
+	var httpClient *http.Client
+	httpClient, err := run.UseClient("http", httpClient)
+	if err != nil {
+		t.Fatalf("failed to retrieve client, err: %v", err)
+	}
+
+	if httpClient == nil {
+		t.Fatal("failed to retrieve client")
+	}
+
 	run.LazyClient("fake", func() {
-		run.Client("fake", &FakeClient{
+		run.Client("fake", &fakeClient{
 			id:          "fake",
 			initialized: true,
 		})
 	})
 
-	var client *FakeClient
-	client, err := run.UseClient("fake", client)
+	var client *fakeClient
+	client, err = run.UseClient("fake", client)
 	if err != nil {
 		t.Fatalf("failed to retrieve client, err: %v", err)
 	}
