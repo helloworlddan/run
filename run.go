@@ -15,12 +15,17 @@
 package run
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
+
+	knative "knative.dev/serving/pkg/apis/serving/v1"
 )
 
 type instance struct {
@@ -39,7 +44,11 @@ type instance struct {
 	jobTaskCount        int
 }
 
-var this instance // NOTE: acts as cache
+var (
+	this               instance // NOTE: acts as cache
+	knativeService     *knative.Service
+	knativeServiceOnce sync.Once
+)
 
 // ResetInstance resets the cached metadata of this instance
 func ResetInstance() {
@@ -146,18 +155,19 @@ func JobExecution() string {
 // - Querying the metadata server
 // - Simply returning `local`
 func ProjectID() string {
-	if this.projectID != "" {
-		return this.projectID
-	}
-	this.projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
 	if len(this.projectID) >= 6 { // ProjectID should be at least 6 chars
 		return this.projectID
 	}
-	project, err := metadata("project/project-id")
-	this.projectID = project
-	if err != nil {
-		this.projectID = "local"
+	this.projectID = os.Getenv("GOOGLE_CLOUD_PROJECT")
+	if len(this.projectID) >= 6 {
+		return this.projectID
 	}
+	project, _ := metadata("project/project-id")
+	this.projectID = project
+	if len(this.projectID) >= 6 {
+		return this.projectID
+	}
+	this.projectID = "local"
 	return this.projectID
 }
 
@@ -178,8 +188,7 @@ func ProjectNumber() string {
 	return this.projectNumber
 }
 
-// ProjectNumber looks up the Google Cloud region in which the current Cloud
-// Run instance seems to be running.
+// Region looks up the actively serving region for this Cloud Run service.
 //
 // If the current process does not seem to be hosted on Cloud Run, it will
 // return `local`.
@@ -240,7 +249,10 @@ func AddOAuth2Header(r *http.Request) *http.Request {
 // If the current process does not seem to be hosted on Cloud Run, it will
 // return `local-identity-token`.
 func ServiceAccountIdentityToken(audience string) string {
-	token, err := metadata(fmt.Sprintf("instance/service-accounts/default/identity?audience=%s", audience))
+	token, err := metadata(fmt.Sprintf(
+		"instance/service-accounts/default/identity?audience=%s",
+		audience,
+	))
 	if err != nil {
 		return "local-identity-token"
 	}
@@ -323,14 +335,63 @@ func JobTaskCount() int {
 	return this.jobTaskCount
 }
 
-func metadata(path string) (string, error) {
-	path = fmt.Sprintf("http://metadata.google.internal/computeMetadata/v1/%s", path)
+// KNativeService loads and returns a KNative Serving representation of the
+// current service. Requires at least roles/run.Viewer on itself.
+func KNativeService() (knative.Service, error) {
+	// TODO: Use mutex or sync.Once
+	if knativeService != nil {
+		return *knativeService, nil
+	}
+	err := loadKNativeService()
+	if err != nil {
+		return knative.Service{}, err
+	}
+	return *knativeService, nil
+}
 
+func loadKNativeService() error {
+	url := fmt.Sprintf("https://%s-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/%s/routes/%s",
+		Region(),
+		ProjectID(),
+		ServiceName(),
+	)
+	request, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	request = AddOAuth2Header(request)
+
+	resp, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	content, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	var service knative.Service
+	err = json.Unmarshal(content, &service)
+	if err != nil {
+		return err
+	}
+
+	knativeService = &service // Setting global
+	return nil
+}
+
+func metadata(path string) (string, error) {
+	if Name() == "local" {
+		return "", errors.New("skipping GCE metadata server, assuming local")
+	}
+
+	path = fmt.Sprintf("http://metadata.google.internal/computeMetadata/v1/%s", path)
 	req, err := http.NewRequest(http.MethodGet, path, nil)
 	if err != nil {
 		return "", err
 	}
-
 	req.Header.Set("Metadata-Flavor", "Google")
 
 	res, err := http.DefaultClient.Do(req)

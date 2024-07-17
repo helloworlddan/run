@@ -50,6 +50,7 @@ func TestProjectID(t *testing.T) {
 	run.ResetInstance()
 	envVarKey := "GOOGLE_CLOUD_PROJECT"
 	envVarVal := "some-valid-project"
+	defer os.Setenv(envVarKey, "")
 
 	err := os.Setenv(envVarKey, envVarVal)
 	if err != nil {
@@ -66,6 +67,7 @@ func TestServicePort(t *testing.T) {
 	run.ResetInstance()
 	envVarKey := "PORT"
 	envVarVal := "8081"
+	defer os.Setenv(envVarKey, "")
 
 	err := os.Setenv(envVarKey, "")
 	if err != nil {
@@ -93,6 +95,7 @@ func TestServiceName(t *testing.T) {
 	run.ResetInstance()
 	envVarKey := "K_SERVICE"
 	envVarVal := "service-001"
+	defer os.Setenv(envVarKey, "")
 
 	err := os.Setenv(envVarKey, "")
 	if err != nil {
@@ -120,6 +123,7 @@ func TestServiceRevision(t *testing.T) {
 	run.ResetInstance()
 	envVarKey := "K_REVISION"
 	envVarVal := "revision-001"
+	defer os.Setenv(envVarKey, "")
 
 	err := os.Setenv(envVarKey, "")
 	if err != nil {
@@ -148,6 +152,7 @@ func TestJobName(t *testing.T) {
 	run.ResetInstance()
 	envVarKey := "CLOUD_RUN_JOB"
 	envVarVal := "job-001"
+	defer os.Setenv(envVarKey, "")
 
 	err := os.Setenv(envVarKey, "")
 	if err != nil {
@@ -175,6 +180,7 @@ func TestJobExecution(t *testing.T) {
 	run.ResetInstance()
 	envVarKey := "CLOUD_RUN_EXECUTION"
 	envVarVal := "job-execution-001"
+	defer os.Setenv(envVarKey, "")
 
 	err := os.Setenv(envVarKey, "")
 	if err != nil {
@@ -202,6 +208,7 @@ func TestJobTaskIndex(t *testing.T) {
 	run.ResetInstance()
 	envVarKey := "CLOUD_RUN_TASK_INDEX"
 	envVarVal := 12
+	defer os.Setenv(envVarKey, "")
 
 	err := os.Setenv(envVarKey, "wrong value")
 	if err != nil {
@@ -229,6 +236,7 @@ func TestJobTaskAttempt(t *testing.T) {
 	run.ResetInstance()
 	envVarKey := "CLOUD_RUN_TASK_ATTEMPT"
 	envVarVal := 14
+	defer os.Setenv(envVarKey, "")
 
 	err := os.Setenv(envVarKey, "wrong value")
 	if err != nil {
@@ -256,6 +264,7 @@ func TestJobTaskCount(t *testing.T) {
 	run.ResetInstance()
 	envVarKey := "CLOUD_RUN_TASK_COUNT"
 	envVarVal := 16
+	defer os.Setenv(envVarKey, "")
 
 	err := os.Setenv(envVarKey, "wrong value")
 	if err != nil {
@@ -276,5 +285,14 @@ func TestJobTaskCount(t *testing.T) {
 	result = run.JobTaskCount()
 	if result != envVarVal {
 		t.Fatalf(`JobTaskCount() = %d, want %d`, result, envVarVal)
+	}
+}
+
+func TestKNativeService(t *testing.T) {
+	run.ResetInstance()
+
+	_, err := run.KNativeService()
+	if err != nil {
+		t.Fatalf("unable to test: %v", err)
 	}
 }
