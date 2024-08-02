@@ -351,6 +351,10 @@ func KNativeService() (knative.Service, error) {
 }
 
 func loadKNativeService() error {
+	if Name() == "local" {
+		return errors.New("skipping GCE metadata server, assuming local")
+	}
+
 	url := fmt.Sprintf("https://%s-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/%s/routes/%s",
 		Region(),
 		ProjectID(),

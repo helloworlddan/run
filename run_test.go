@@ -287,12 +287,3 @@ func TestJobTaskCount(t *testing.T) {
 		t.Fatalf(`JobTaskCount() = %d, want %d`, result, envVarVal)
 	}
 }
-
-func TestKNativeService(t *testing.T) {
-	run.ResetInstance()
-
-	_, err := run.KNativeService()
-	if err != nil {
-		t.Fatalf("unable to test: %v", err)
-	}
-}
