@@ -197,7 +197,8 @@ func Region() string {
 		return this.region
 	}
 	region, err := metadata("instance/region")
-	this.region = region
+	regionComponents := strings.Split(region, "/")
+	this.region = regionComponents[len(regionComponents)-1]
 	if err != nil {
 		this.region = "local"
 	}
