@@ -48,7 +48,7 @@ type SourceLocation struct {
 // String returns a JSON representation of the log entry.
 func (le LogEntry) String() string {
 	if Name() == "local" {
-		return fmt.Sprintf("%10s %s", le.Severity, le.Message)
+		return fmt.Sprintf("%-10s %s", le.Severity, le.Message)
 	}
 	log.SetFlags(0)
 	jsonBytes, err := json.Marshal(le)
