@@ -265,7 +265,7 @@ func ServiceAccountIdentityToken(audience string) string {
 // it.
 func AddOIDCHeader(r *http.Request, audience string) *http.Request {
 	token := ServiceAccountIdentityToken(audience)
-	r.Header.Add("Authorization", fmt.Sprintf("bearer: %s", token))
+	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	return r
 }
 
