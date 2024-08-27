@@ -240,7 +240,7 @@ func ServiceAccountAccessToken() string {
 // it.
 func AddOAuth2Header(r *http.Request) *http.Request {
 	token := ServiceAccountAccessToken()
-	r.Header.Add("Authorization", fmt.Sprintf("bearer: %s", token))
+	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	return r
 }
 
