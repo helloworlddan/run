@@ -39,6 +39,7 @@ type instance struct {
 	region              string
 	serviceAccountEmail string
 	servicePort         string
+	url                 string
 	jobTaskIndex        int
 	jobTaskAttempt      int
 	jobTaskCount        int
@@ -222,6 +223,23 @@ func ServiceAccountEmail() string {
 	return this.serviceAccountEmail
 }
 
+// URL infers the URL with which this service will be addressable. This will
+// either be 'http://localhost:8080' or the deterministic URL provided by Cloud
+// Run
+func URL() string {
+	if this.url != "" {
+		return this.url
+	}
+
+	url := "http://localhost:8080"
+	region := Region()
+	if region != "local" {
+		url = fmt.Sprintf("https://%s-%s.%s.run.app", ServiceName(), ProjectNumber(), region)
+	}
+	this.url = url
+	return this.url
+}
+
 // ServiceAccountAccessToken looks up and returns a fresh OAuth2 access token
 // for the service account configured for this Cloud Run instance.
 //
@@ -355,7 +373,8 @@ func loadKNativeService() error {
 		return errors.New("skipping GCE metadata server, assuming local")
 	}
 
-	url := fmt.Sprintf("https://%s-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/%s/routes/%s",
+	url := fmt.Sprintf(
+		"https://%s-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/%s/routes/%s",
 		Region(),
 		ProjectID(),
 		ServiceName(),
