@@ -89,6 +89,7 @@ func UseClient[T any](name string, client T) (T, error) {
 	}
 
 	// Refresh
+	// TODO: is this useless?
 	lc, ok = clients[name]
 	if !ok {
 		return client, fmt.Errorf("no client found for name: '%s'", name)

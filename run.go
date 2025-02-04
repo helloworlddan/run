@@ -73,6 +73,18 @@ func ID() string {
 	return this.id
 }
 
+// Local checks the presence of Cloud Run provided variables to determine if
+// this instance is running locally or on Cloud Run.
+func Local() bool {
+	if len(os.Getenv("K_SERVICE")) != 0 {
+		return false
+	}
+	if len(os.Getenv("CLOUD_RUN_JOB")) != 0 {
+		return false
+	}
+	return true
+}
+
 // Name returns a preferred name for the currently running Cloud Run service or
 // job. This will be either the service or job name or simply 'local'.
 func Name() string {
@@ -81,7 +93,7 @@ func Name() string {
 		return name
 	}
 	name = JobName()
-	if name != "local" { // redundant check, but more obvious when reading
+	if name != "local" {
 		return name
 	}
 	return "local"
@@ -225,7 +237,7 @@ func ServiceAccountEmail() string {
 
 // URL infers the URL with which this service will be addressable. This will
 // either be 'http://localhost:8080' or the deterministic URL provided by Cloud
-// Run
+// Run.
 func URL() string {
 	if this.url != "" {
 		return this.url
@@ -256,10 +268,10 @@ func ServiceAccountAccessToken() string {
 // AddOAuth2Header injects an `Authorization` header  with a valid access token
 // for the configured service account into the supplied HTTP request and returns
 // it.
-func AddOAuth2Header(r *http.Request) *http.Request {
+func AddOAuth2Header(request *http.Request) *http.Request {
 	token := ServiceAccountAccessToken()
-	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-	return r
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	return request
 }
 
 // ServiceAccountIdentityToken attempts to mint an OIDC Identity Token for the
@@ -281,10 +293,10 @@ func ServiceAccountIdentityToken(audience string) string {
 // AddOIDCHeader injects an `Authorization` header  with a valid identity token
 // for the configured service account into the supplied HTTP request and returns
 // it.
-func AddOIDCHeader(r *http.Request, audience string) *http.Request {
+func AddOIDCHeader(request *http.Request, audience string) *http.Request {
 	token := ServiceAccountIdentityToken(audience)
-	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-	return r
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+	return request
 }
 
 // ServicePort looks up and returns the configured service `$PORT` for
@@ -357,20 +369,24 @@ func JobTaskCount() int {
 // KNativeService loads and returns a KNative Serving representation of the
 // current service. Requires at least roles/run.Viewer on itself.
 func KNativeService() (knative.Service, error) {
-	// TODO: Use mutex or sync.Once
-	if knativeService != nil {
-		return *knativeService, nil
+	// TODO : test this
+	var err error
+	if *knativeService == nil {
+		knativeServiceOnce.Do(func() {
+			err = loadKNativeService()
+		})
 	}
-	err := loadKNativeService()
+
 	if err != nil {
-		return knative.Service{}, err
+		return *knative.Service{}, nil
 	}
+
 	return *knativeService, nil
 }
 
 func loadKNativeService() error {
-	if Name() == "local" {
-		return errors.New("skipping GCE metadata server, assuming local")
+	if Local() {
+		return errors.New("skipping kNative endpoints, assuming local")
 	}
 
 	url := fmt.Sprintf(
@@ -385,13 +401,13 @@ func loadKNativeService() error {
 	}
 	request = AddOAuth2Header(request)
 
-	resp, err := http.DefaultClient.Do(request)
+	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer response.Body.Close()
 
-	content, err := io.ReadAll(resp.Body)
+	content, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err
 	}
@@ -407,27 +423,27 @@ func loadKNativeService() error {
 }
 
 func metadata(path string) (string, error) {
-	if Name() == "local" {
+	if Local() {
 		return "", errors.New("skipping GCE metadata server, assuming local")
 	}
 
-	path = fmt.Sprintf("http://metadata.google.internal/computeMetadata/v1/%s", path)
-	req, err := http.NewRequest(http.MethodGet, path, nil)
+	url := fmt.Sprintf("http://metadata.google.internal/computeMetadata/v1/%s", path)
+	request, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Metadata-Flavor", "Google")
+	request.Header.Set("Metadata-Flavor", "Google")
 
-	res, err := http.DefaultClient.Do(req)
+	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return "", err
 	}
-	defer res.Body.Close()
+	defer response.Body.Close()
 
-	raw, err := io.ReadAll(res.Body)
+	content, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", err
 	}
 
-	return strings.TrimSpace(string(raw)), nil
+	return strings.TrimSpace(string(content)), nil
 }

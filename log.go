@@ -170,10 +170,11 @@ func Fatal(r *http.Request, err error) {
 func logf(r *http.Request, severity string, format string, v ...any) {
 	log.SetFlags(0)
 	if !isLogEntrySeverity(severity) {
-		// Defaulting to the default, duh
+		// Defaulting to the default, duh.
 		severity = "DEFAULT"
 	}
 
+	// Find where in the source the entry was logged.
 	location := &SourceLocation{}
 	caller, file, line, ok := runtime.Caller(2)
 	if ok {
@@ -197,6 +198,7 @@ func logf(r *http.Request, severity string, format string, v ...any) {
 		return
 	}
 
+	// Create attach trace header for Cloud Trace
 	traceHeader := r.Header.Get("X-Cloud-Trace-Context")
 	ts := strings.Split(traceHeader, "/")
 	if len(ts) > 0 && len(ts[0]) > 0 {

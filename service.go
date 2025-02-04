@@ -65,7 +65,7 @@ func ServeGRPC(shutdown func(context.Context), server *grpc.Server) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Gracefully shutdown the http server by waiting on existing requests
+	// Gracefully shutdown the gRPC server by waiting on existing requests
 	server.Stop()
 
 	// User-supplied shutdown
