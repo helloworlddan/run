@@ -370,7 +370,7 @@ func KNativeService() (knative.Service, error) {
 
 func loadKNativeService() error {
 	if Name() == "local" {
-		return errors.New("skipping GCE metadata server, assuming local")
+		return errors.New("skipping KNative endpoint, assuming local")
 	}
 
 	url := fmt.Sprintf(
@@ -387,7 +387,10 @@ func loadKNativeService() error {
 
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
-		return err
+		return fmt.Errorf(
+			"failed to read KNative endpoints, do we have roles/run.viewer on our service? error: %v",
+			err,
+		)
 	}
 	defer resp.Body.Close()
 
