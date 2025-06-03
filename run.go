@@ -385,6 +385,34 @@ func KNativeService() (knative.Service, error) {
 	return *this.knativeService, nil
 }
 
+func Creator() (string, error) {
+	annotationKey := "serving.knative.dev/creator"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
+func LastModifier() (string, error) {
+	annotationKey := "serving.knative.dev/lastModifier"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
 func LaunchStage() (string, error) {
 	annotationKey := "run.googleapis.com/launch-stage"
 	knativeService, err := KNativeService()
@@ -414,7 +442,7 @@ func Description() (string, error) {
 }
 
 func Ingress() (string, error) {
-	annotationKey := "run.googleapis.com/description"
+	annotationKey := "run.googleapis.com/ingress"
 	knativeService, err := KNativeService()
 	if err != nil {
 		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
@@ -569,32 +597,32 @@ func RevisionMaximumInstances() (int, error) {
 	return strconv.Atoi(annotationValue)
 }
 
-func CPUThrottling() (string, error) {
+func CPUThrottling() (bool, error) {
 	annotationKey := "run.googleapis.com/cpu-throttling"
 	knativeService, err := KNativeService()
 	if err != nil {
-		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+		return true, fmt.Errorf("error loading property '%s': %v", annotationKey, err)
 	}
 	annotationValue := knativeService.Spec.Template.Annotations[annotationKey]
 	if annotationValue == "" {
-		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+		return true, fmt.Errorf("error reading property '%s'", annotationKey)
 	}
 
-	return annotationValue, nil
+	return strconv.ParseBool(annotationValue)
 }
 
-func StartupCPUBoost() (string, error) {
+func StartupCPUBoost() (bool, error) {
 	annotationKey := "run.googleapis.com/cpu-throttling"
 	knativeService, err := KNativeService()
 	if err != nil {
-		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+		return false, fmt.Errorf("error loading property '%s': %v", annotationKey, err)
 	}
 	annotationValue := knativeService.Spec.Template.Annotations[annotationKey]
 	if annotationValue == "" {
-		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+		return false, fmt.Errorf("error reading property '%s'", annotationKey)
 	}
 
-	return annotationValue, nil
+	return strconv.ParseBool(annotationValue)
 }
 
 func SessionAffinity() (string, error) {
