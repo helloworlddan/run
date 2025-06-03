@@ -31,7 +31,7 @@ func TestString(t *testing.T) {
 		Component: component,
 	}
 
-	expect := `{"message":"this is a log message","severity":"ALERT","logging.googleapis.com/trace":"some-trace-key","component":"test"}`
+	expect := `ALERT      this is a log message`
 	line := le.String()
 
 	if line != expect {

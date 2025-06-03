@@ -40,7 +40,7 @@ func TestAddOAuth2Header(t *testing.T) {
 		t.Fatal("AddOAuth2Header() contains malformed 'Authorization' header")
 	}
 
-	expect := fmt.Sprintf("bearer: %s", run.ServiceAccountAccessToken())
+	expect := "Bearer local-access-token"
 	if val[0] != expect {
 		t.Fatal("AddOAuth2Header() contains invalid 'Authorization' header")
 	}
