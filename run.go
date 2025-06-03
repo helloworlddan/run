@@ -70,18 +70,6 @@ func ResourceType() RunResourceType {
 	return LocalResource
 }
 
-// Name returns a preferred name for the currently running Cloud Run service or
-// job. This will be either the service or job name or simply 'local'.
-func Name() string {
-	if ResourceType() == ServiceResource {
-		return ServiceName()
-	}
-	if ResourceType() == JobResource {
-		return JobName()
-	}
-	return "local"
-}
-
 // ID returns the unique instance ID of the Cloud Run instance serving the
 // running job or service by referring to the metadata server.
 //
@@ -97,6 +85,18 @@ func InstanceID() string {
 		this.instanceID = "000000"
 	}
 	return this.instanceID
+}
+
+// Name returns a preferred name for the currently running Cloud Run service or
+// job. This will be either the service or job name or simply 'local'.
+func Name() string {
+	if ResourceType() == ServiceResource {
+		return ServiceName()
+	}
+	if ResourceType() == JobResource {
+		return JobName()
+	}
+	return "local"
 }
 
 // ServiceName returns the name of the currently running Cloud Run service by
@@ -158,6 +158,22 @@ func Execution() string {
 		this.jobExecution = "local"
 	}
 	return this.jobExecution
+}
+
+// Port looks up and returns the configured service `$PORT` for
+// this Cloud Run service.
+//
+// If the current process does not seem to be hosted on Cloud Run, it will
+// return the default value `8080`.
+func Port() string {
+	if this.servicePort != "" {
+		return this.servicePort
+	}
+	this.servicePort = os.Getenv("PORT")
+	if this.servicePort == "" {
+		this.servicePort = "8080"
+	}
+	return this.servicePort
 }
 
 // ProjectID attempts to resolve the alphanumeric Google Cloud project ID that
@@ -297,22 +313,6 @@ func AddOIDCHeader(r *http.Request, audience string) *http.Request {
 	token := ServiceAccountIdentityToken(audience)
 	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 	return r
-}
-
-// Port looks up and returns the configured service `$PORT` for
-// this Cloud Run service.
-//
-// If the current process does not seem to be hosted on Cloud Run, it will
-// return the default value `8080`.
-func Port() string {
-	if this.servicePort != "" {
-		return this.servicePort
-	}
-	this.servicePort = os.Getenv("PORT")
-	if this.servicePort == "" {
-		this.servicePort = "8080"
-	}
-	return this.servicePort
 }
 
 // TaskIndex looks up and returns the current task index for the running
@@ -733,7 +733,7 @@ func loadKNativeService() error {
 	}
 
 	url := fmt.Sprintf(
-		"https://%s-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/%s/routes/%s",
+		"https://%s-run.googleapis.com/apis/serving.knative.dev/v1/namespaces/%s/services/%s",
 		Region(),
 		ProjectID(),
 		ServiceName(),
