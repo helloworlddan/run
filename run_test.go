@@ -47,7 +47,7 @@ func TestAddOAuth2Header(t *testing.T) {
 }
 
 func TestProjectID(t *testing.T) {
-	run.ResetInstance()
+	run.ResetCache()
 	envVarKey := "GOOGLE_CLOUD_PROJECT"
 	envVarVal := "some-valid-project"
 	defer os.Setenv(envVarKey, "")
@@ -64,7 +64,7 @@ func TestProjectID(t *testing.T) {
 }
 
 func TestServicePort(t *testing.T) {
-	run.ResetInstance()
+	run.ResetCache()
 	envVarKey := "PORT"
 	envVarVal := "8081"
 	defer os.Setenv(envVarKey, "")
@@ -84,7 +84,7 @@ func TestServicePort(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	run.ResetInstance()
+	run.ResetCache()
 	result = run.ServicePort()
 	if result != envVarVal {
 		t.Fatalf(`port() = %s, want %s`, result, envVarVal)
@@ -92,7 +92,7 @@ func TestServicePort(t *testing.T) {
 }
 
 func TestServiceName(t *testing.T) {
-	run.ResetInstance()
+	run.ResetCache()
 	envVarKey := "K_SERVICE"
 	envVarVal := "service-001"
 	defer os.Setenv(envVarKey, "")
@@ -112,7 +112,7 @@ func TestServiceName(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	run.ResetInstance()
+	run.ResetCache()
 	result = run.ServiceName()
 	if result != envVarVal {
 		t.Fatalf(`KNativeService() = %s, want %s`, result, envVarVal)
@@ -120,7 +120,7 @@ func TestServiceName(t *testing.T) {
 }
 
 func TestServiceRevision(t *testing.T) {
-	run.ResetInstance()
+	run.ResetCache()
 	envVarKey := "K_REVISION"
 	envVarVal := "revision-001"
 	defer os.Setenv(envVarKey, "")
@@ -136,7 +136,7 @@ func TestServiceRevision(t *testing.T) {
 		t.Fatalf(`KNativeRevision() = %s, want %s`, result, expected)
 	}
 
-	run.ResetInstance()
+	run.ResetCache()
 	err = os.Setenv(envVarKey, envVarVal)
 	if err != nil {
 		t.Fatalf("unable to test: %v", err)
@@ -149,7 +149,7 @@ func TestServiceRevision(t *testing.T) {
 }
 
 func TestJobName(t *testing.T) {
-	run.ResetInstance()
+	run.ResetCache()
 	envVarKey := "CLOUD_RUN_JOB"
 	envVarVal := "job-001"
 	defer os.Setenv(envVarKey, "")
@@ -169,7 +169,7 @@ func TestJobName(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	run.ResetInstance()
+	run.ResetCache()
 	result = run.JobName()
 	if result != envVarVal {
 		t.Fatalf(`jobName() = %s, want %s`, result, envVarVal)
@@ -177,7 +177,7 @@ func TestJobName(t *testing.T) {
 }
 
 func TestJobExecution(t *testing.T) {
-	run.ResetInstance()
+	run.ResetCache()
 	envVarKey := "CLOUD_RUN_EXECUTION"
 	envVarVal := "job-execution-001"
 	defer os.Setenv(envVarKey, "")
@@ -197,7 +197,7 @@ func TestJobExecution(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	run.ResetInstance()
+	run.ResetCache()
 	result = run.JobExecution()
 	if result != envVarVal {
 		t.Fatalf(`JobExecution() = %s, want %s`, result, envVarVal)
@@ -205,7 +205,7 @@ func TestJobExecution(t *testing.T) {
 }
 
 func TestJobTaskIndex(t *testing.T) {
-	run.ResetInstance()
+	run.ResetCache()
 	envVarKey := "CLOUD_RUN_TASK_INDEX"
 	envVarVal := 12
 	defer os.Setenv(envVarKey, "")
@@ -225,7 +225,7 @@ func TestJobTaskIndex(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	run.ResetInstance()
+	run.ResetCache()
 	result = run.JobTaskIndex()
 	if result != envVarVal {
 		t.Fatalf(`JobTaskIndex() = %d, want %d`, result, envVarVal)
@@ -233,7 +233,7 @@ func TestJobTaskIndex(t *testing.T) {
 }
 
 func TestJobTaskAttempt(t *testing.T) {
-	run.ResetInstance()
+	run.ResetCache()
 	envVarKey := "CLOUD_RUN_TASK_ATTEMPT"
 	envVarVal := 14
 	defer os.Setenv(envVarKey, "")
@@ -253,7 +253,7 @@ func TestJobTaskAttempt(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	run.ResetInstance()
+	run.ResetCache()
 	result = run.JobTaskAttempt()
 	if result != envVarVal {
 		t.Fatalf(`JobTaskAttempt() = %d, want %d`, result, envVarVal)
@@ -261,7 +261,7 @@ func TestJobTaskAttempt(t *testing.T) {
 }
 
 func TestJobTaskCount(t *testing.T) {
-	run.ResetInstance()
+	run.ResetCache()
 	envVarKey := "CLOUD_RUN_TASK_COUNT"
 	envVarVal := 16
 	defer os.Setenv(envVarKey, "")
@@ -281,7 +281,7 @@ func TestJobTaskCount(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	run.ResetInstance()
+	run.ResetCache()
 	result = run.JobTaskCount()
 	if result != envVarVal {
 		t.Fatalf(`JobTaskCount() = %d, want %d`, result, envVarVal)

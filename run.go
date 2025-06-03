@@ -23,13 +23,12 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 
 	knative "knative.dev/serving/pkg/apis/serving/v1"
 )
 
-type instance struct {
-	id                  string
+type cache struct {
+	instanceID          string
 	serviceName         string
 	jobName             string
 	serviceRevision     string
@@ -39,21 +38,18 @@ type instance struct {
 	region              string
 	serviceAccountEmail string
 	servicePort         string
-	url                 string
+	serviceURL          string
 	jobTaskIndex        int
 	jobTaskAttempt      int
 	jobTaskCount        int
+	knativeService      *knative.Service
 }
 
-var (
-	this               instance // NOTE: acts as cache
-	knativeService     *knative.Service
-	knativeServiceOnce sync.Once
-)
+var this cache // NOTE: acts as cache
 
-// ResetInstance resets the cached metadata of this instance
-func ResetInstance() {
-	this = instance{}
+// ResetCache resets the cached metadata of this instance
+func ResetCache() {
+	this = cache{}
 }
 
 // ID returns the unique instance ID of the Cloud Run instance serving the
@@ -61,16 +57,16 @@ func ResetInstance() {
 //
 // If the current process does not seem to be hosted on Cloud Run, it will
 // simply return `000000`.
-func ID() string {
-	if this.id != "" {
-		return this.id
+func InstanceID() string {
+	if this.instanceID != "" {
+		return this.instanceID
 	}
 	id, err := metadata("instance/id")
-	this.id = id
+	this.instanceID = id
 	if err != nil {
-		this.id = "000000"
+		this.instanceID = "000000"
 	}
-	return this.id
+	return this.instanceID
 }
 
 // Name returns a preferred name for the currently running Cloud Run service or
@@ -226,9 +222,9 @@ func ServiceAccountEmail() string {
 // URL infers the URL with which this service will be addressable. This will
 // either be 'http://localhost:8080' or the deterministic URL provided by Cloud
 // Run
-func URL() string {
-	if this.url != "" {
-		return this.url
+func ServiceURL() string {
+	if this.serviceURL != "" {
+		return this.serviceURL
 	}
 
 	url := "http://localhost:8080"
@@ -236,8 +232,8 @@ func URL() string {
 	if region != "local" {
 		url = fmt.Sprintf("https://%s-%s.%s.run.app", ServiceName(), ProjectNumber(), region)
 	}
-	this.url = url
-	return this.url
+	this.serviceURL = url
+	return this.serviceURL
 }
 
 // ServiceAccountAccessToken looks up and returns a fresh OAuth2 access token
@@ -357,15 +353,258 @@ func JobTaskCount() int {
 // KNativeService loads and returns a KNative Serving representation of the
 // current service. Requires at least roles/run.Viewer on itself.
 func KNativeService() (knative.Service, error) {
-	// TODO: Use mutex or sync.Once
-	if knativeService != nil {
-		return *knativeService, nil
+	if this.knativeService != nil {
+		return *this.knativeService, nil
 	}
+
 	err := loadKNativeService()
 	if err != nil {
 		return knative.Service{}, err
 	}
-	return *knativeService, nil
+
+	return *this.knativeService, nil
+}
+
+func ServiceLaunchStage() (string, error) {
+	annotationKey := "run.googleapis.com/launch-stage"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
+func ServiceDescription() (string, error) {
+	annotationKey := "run.googleapis.com/description"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
+func ServiceIngress() (string, error) {
+	annotationKey := "run.googleapis.com/description"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
+func ServiceBinaryAuthorizationPolicy() (string, error) {
+	annotationKey := "run.googleapis.com/binary-authorization"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
+func ServiceBinaryAuthorizationBreakglassJustification() (string, error) {
+	annotationKey := "run.googleapis.com/binary-authorization-breakglass"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
+func ServiceMinimumInstances() (int, error) {
+	annotationKey := "run.googleapis.com/minScale"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return 0, fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Annotations[annotationKey]
+	if annotationValue == "" {
+		return 0, fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return strconv.Atoi(annotationValue)
+}
+
+func ServiceFunctionEntryPoint() (string, error) {
+	annotationKey := "run.googleapis.com/function-target"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
+func ServiceInvokerIAMDisabled() (bool, error) {
+	annotationKey := "run.googleapis.com/invoker-iam-disabled"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return false, fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Annotations[annotationKey]
+	if annotationValue == "" {
+		return false, fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return strconv.ParseBool(annotationValue)
+}
+
+func ServiceIAPEnabled() (bool, error) {
+	annotationKey := "run.googleapis.com/iap-enabled"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return false, fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Annotations[annotationKey]
+	if annotationValue == "" {
+		return false, fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return strconv.ParseBool(annotationValue)
+}
+
+func ServiceScalingMode() (string, error) {
+	annotationKey := "run.googleapis.com/scalingMode"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
+func ServiceManualInstances() (int, error) {
+	annotationKey := "run.googleapis.com/manualInstanceCount"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return -1, fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Annotations[annotationKey]
+	if annotationValue == "" {
+		return -1, fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return strconv.Atoi(annotationValue)
+}
+
+func RevisionMinimumInstances() (int, error) {
+	annotationKey := "autoscaling.knative.dev/minScale"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return 0, fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Spec.Template.Annotations[annotationKey]
+	if annotationValue == "" {
+		return 0, fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return strconv.Atoi(annotationValue)
+}
+
+func RevisionMaximumInstances() (int, error) {
+	annotationKey := "autoscaling.knative.dev/maxScale"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return 0, fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Spec.Template.Annotations[annotationKey]
+	if annotationValue == "" {
+		return 0, fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return strconv.Atoi(annotationValue)
+}
+
+func RevisionCPUThrottling() (string, error) {
+	annotationKey := "run.googleapis.com/cpu-throttling"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Spec.Template.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
+func RevisionCloudSQLInstances() ([]string, error) {
+	annotationKey := "run.googleapis.com/cloudsql-instances"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return []string{}, fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Spec.Template.Annotations[annotationKey]
+	if annotationValue == "" {
+		return []string{}, fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return strings.Split(annotationValue, ","), nil
+}
+
+func RevisionVPCAccessConnector() (string, error) {
+	annotationKey := "run.googleapis.com/vpc-access-connector"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Spec.Template.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
+func RevisionVPCAccessEgressMode() (string, error) {
+	annotationKey := "run.googleapis.com/vpc-access-egress"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "all-traffic", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Spec.Template.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "all-traffic", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	if annotationValue == "all" {
+		return "all-traffic", nil
+	}
+
+	return annotationValue, nil
 }
 
 func loadKNativeService() error {
@@ -405,7 +644,7 @@ func loadKNativeService() error {
 		return err
 	}
 
-	knativeService = &service // Setting global
+	this.knativeService = &service // Setting global
 	return nil
 }
 
