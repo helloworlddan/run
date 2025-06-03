@@ -27,6 +27,14 @@ import (
 	knative "knative.dev/serving/pkg/apis/serving/v1"
 )
 
+type RunResourceType int
+
+const (
+	LocalResource   RunResourceType = iota
+	ServiceResource RunResourceType = iota
+	JobResource     RunResourceType = iota
+)
+
 type cache struct {
 	instanceID          string
 	serviceName         string
@@ -52,6 +60,28 @@ func ResetCache() {
 	this = cache{}
 }
 
+func ResourceType() RunResourceType {
+	if ServiceName() != "local" {
+		return ServiceResource
+	}
+	if JobName() != "local" {
+		return JobResource
+	}
+	return LocalResource
+}
+
+// Name returns a preferred name for the currently running Cloud Run service or
+// job. This will be either the service or job name or simply 'local'.
+func Name() string {
+	if ResourceType() == ServiceResource {
+		return ServiceName()
+	}
+	if ResourceType() == JobResource {
+		return JobName()
+	}
+	return "local"
+}
+
 // ID returns the unique instance ID of the Cloud Run instance serving the
 // running job or service by referring to the metadata server.
 //
@@ -67,20 +97,6 @@ func InstanceID() string {
 		this.instanceID = "000000"
 	}
 	return this.instanceID
-}
-
-// Name returns a preferred name for the currently running Cloud Run service or
-// job. This will be either the service or job name or simply 'local'.
-func Name() string {
-	name := ServiceName()
-	if name != "local" {
-		return name
-	}
-	name = JobName()
-	if name != "local" { // redundant check, but more obvious when reading
-		return name
-	}
-	return "local"
 }
 
 // ServiceName returns the name of the currently running Cloud Run service by
@@ -115,12 +131,12 @@ func JobName() string {
 	return this.jobName
 }
 
-// ServiceRevision returns the revision identifier of the currently running
+// Revision returns the revision identifier of the currently running
 // Cloud Run service by looking up the `K_REVISION` environment variable.
 //
 // If the current process does not seem to be hosted on Cloud Run, it will
 // return a deterministic identifier in the form of `<SERVICE_NAME>-00001-xxx`.
-func ServiceRevision() string {
+func Revision() string {
 	if this.serviceRevision != "" {
 		return this.serviceRevision
 	}
@@ -131,9 +147,9 @@ func ServiceRevision() string {
 	return this.serviceRevision
 }
 
-// JobExecution returns the execution identifier of the currently running
+// Execution returns the execution identifier of the currently running
 // Cloud Run job by looking up the `CLOUD_RUN_EXECUTION` environment variable.
-func JobExecution() string {
+func Execution() string {
 	if this.jobExecution != "" {
 		return this.jobExecution
 	}
@@ -283,12 +299,12 @@ func AddOIDCHeader(r *http.Request, audience string) *http.Request {
 	return r
 }
 
-// ServicePort looks up and returns the configured service `$PORT` for
+// Port looks up and returns the configured service `$PORT` for
 // this Cloud Run service.
 //
 // If the current process does not seem to be hosted on Cloud Run, it will
 // return the default value `8080`.
-func ServicePort() string {
+func Port() string {
 	if this.servicePort != "" {
 		return this.servicePort
 	}
@@ -299,12 +315,12 @@ func ServicePort() string {
 	return this.servicePort
 }
 
-// JobTaskIndex looks up and returns the current task index for the running
+// TaskIndex looks up and returns the current task index for the running
 // Cloud Run job.
 //
 // If the current process does not seem to be hosted on Cloud Run, it will
 // sumply return `-1`.
-func JobTaskIndex() int {
+func TaskIndex() int {
 	if this.jobTaskIndex != 0 {
 		return this.jobTaskIndex
 	}
@@ -316,12 +332,12 @@ func JobTaskIndex() int {
 	return this.jobTaskIndex
 }
 
-// JobTaskAttempt looks up and returns the current task attempt for the running
+// TaskAttempt looks up and returns the current task attempt for the running
 // Cloud Run job.
 //
 // If the current process does not seem to be hosted on Cloud Run, it will
 // sumply return `-1`.
-func JobTaskAttempt() int {
+func TaskAttempt() int {
 	if this.jobTaskAttempt != 0 {
 		return this.jobTaskAttempt
 	}
@@ -333,12 +349,12 @@ func JobTaskAttempt() int {
 	return this.jobTaskAttempt
 }
 
-// JobTaskCount looks up and returns the current task count for the running
+// TaskCount looks up and returns the current task count for the running
 // Cloud Run job.
 //
 // If the current process does not seem to be hosted on Cloud Run, it will
 // sumply return `-1`.
-func JobTaskCount() int {
+func TaskCount() int {
 	if this.jobTaskCount != 0 {
 		return this.jobTaskCount
 	}
@@ -357,6 +373,10 @@ func KNativeService() (knative.Service, error) {
 		return *this.knativeService, nil
 	}
 
+	if ResourceType() != ServiceResource {
+		return knative.Service{}, errors.New("resource does not appear to be a service")
+	}
+
 	err := loadKNativeService()
 	if err != nil {
 		return knative.Service{}, err
@@ -365,7 +385,7 @@ func KNativeService() (knative.Service, error) {
 	return *this.knativeService, nil
 }
 
-func ServiceLaunchStage() (string, error) {
+func LaunchStage() (string, error) {
 	annotationKey := "run.googleapis.com/launch-stage"
 	knativeService, err := KNativeService()
 	if err != nil {
@@ -379,7 +399,7 @@ func ServiceLaunchStage() (string, error) {
 	return annotationValue, nil
 }
 
-func ServiceDescription() (string, error) {
+func Description() (string, error) {
 	annotationKey := "run.googleapis.com/description"
 	knativeService, err := KNativeService()
 	if err != nil {
@@ -393,7 +413,7 @@ func ServiceDescription() (string, error) {
 	return annotationValue, nil
 }
 
-func ServiceIngress() (string, error) {
+func Ingress() (string, error) {
 	annotationKey := "run.googleapis.com/description"
 	knativeService, err := KNativeService()
 	if err != nil {
@@ -407,7 +427,7 @@ func ServiceIngress() (string, error) {
 	return annotationValue, nil
 }
 
-func ServiceBinaryAuthorizationPolicy() (string, error) {
+func BinaryAuthorizationPolicy() (string, error) {
 	annotationKey := "run.googleapis.com/binary-authorization"
 	knativeService, err := KNativeService()
 	if err != nil {
@@ -421,7 +441,9 @@ func ServiceBinaryAuthorizationPolicy() (string, error) {
 	return annotationValue, nil
 }
 
-func ServiceBinaryAuthorizationBreakglassJustification() (string, error) {
+// BinaryAuthorizationBreakglassJustification returns the justification for
+// circumventing the configured Binary Authorization policy.
+func BinaryAuthorizationBreakglassJustification() (string, error) {
 	annotationKey := "run.googleapis.com/binary-authorization-breakglass"
 	knativeService, err := KNativeService()
 	if err != nil {
@@ -449,7 +471,7 @@ func ServiceMinimumInstances() (int, error) {
 	return strconv.Atoi(annotationValue)
 }
 
-func ServiceFunctionEntryPoint() (string, error) {
+func FunctionEntryPoint() (string, error) {
 	annotationKey := "run.googleapis.com/function-target"
 	knativeService, err := KNativeService()
 	if err != nil {
@@ -463,7 +485,7 @@ func ServiceFunctionEntryPoint() (string, error) {
 	return annotationValue, nil
 }
 
-func ServiceInvokerIAMDisabled() (bool, error) {
+func InvokerIAMDisabled() (bool, error) {
 	annotationKey := "run.googleapis.com/invoker-iam-disabled"
 	knativeService, err := KNativeService()
 	if err != nil {
@@ -477,7 +499,7 @@ func ServiceInvokerIAMDisabled() (bool, error) {
 	return strconv.ParseBool(annotationValue)
 }
 
-func ServiceIAPEnabled() (bool, error) {
+func IAPEnabled() (bool, error) {
 	annotationKey := "run.googleapis.com/iap-enabled"
 	knativeService, err := KNativeService()
 	if err != nil {
@@ -491,7 +513,7 @@ func ServiceIAPEnabled() (bool, error) {
 	return strconv.ParseBool(annotationValue)
 }
 
-func ServiceScalingMode() (string, error) {
+func ScalingMode() (string, error) {
 	annotationKey := "run.googleapis.com/scalingMode"
 	knativeService, err := KNativeService()
 	if err != nil {
@@ -505,7 +527,7 @@ func ServiceScalingMode() (string, error) {
 	return annotationValue, nil
 }
 
-func ServiceManualInstances() (int, error) {
+func ManualInstances() (int, error) {
 	annotationKey := "run.googleapis.com/manualInstanceCount"
 	knativeService, err := KNativeService()
 	if err != nil {
@@ -547,7 +569,7 @@ func RevisionMaximumInstances() (int, error) {
 	return strconv.Atoi(annotationValue)
 }
 
-func RevisionCPUThrottling() (string, error) {
+func CPUThrottling() (string, error) {
 	annotationKey := "run.googleapis.com/cpu-throttling"
 	knativeService, err := KNativeService()
 	if err != nil {
@@ -561,7 +583,35 @@ func RevisionCPUThrottling() (string, error) {
 	return annotationValue, nil
 }
 
-func RevisionCloudSQLInstances() ([]string, error) {
+func StartupCPUBoost() (string, error) {
+	annotationKey := "run.googleapis.com/cpu-throttling"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Spec.Template.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
+func SessionAffinity() (string, error) {
+	annotationKey := "run.googleapis.com/SessionAffinity"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Spec.Template.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
+func CloudSQLInstances() ([]string, error) {
 	annotationKey := "run.googleapis.com/cloudsql-instances"
 	knativeService, err := KNativeService()
 	if err != nil {
@@ -575,7 +625,21 @@ func RevisionCloudSQLInstances() ([]string, error) {
 	return strings.Split(annotationValue, ","), nil
 }
 
-func RevisionVPCAccessConnector() (string, error) {
+func ExecutionEnvironment() (string, error) {
+	annotationKey := "run.googleapis.com/execution-environment"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Spec.Template.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
+func VPCAccessConnector() (string, error) {
 	annotationKey := "run.googleapis.com/vpc-access-connector"
 	knativeService, err := KNativeService()
 	if err != nil {
@@ -589,7 +653,7 @@ func RevisionVPCAccessConnector() (string, error) {
 	return annotationValue, nil
 }
 
-func RevisionVPCAccessEgressMode() (string, error) {
+func VPCAccessEgress() (string, error) {
 	annotationKey := "run.googleapis.com/vpc-access-egress"
 	knativeService, err := KNativeService()
 	if err != nil {
@@ -607,8 +671,36 @@ func RevisionVPCAccessEgressMode() (string, error) {
 	return annotationValue, nil
 }
 
+func VPCNetworkInterfaces() (string, error) {
+	annotationKey := "run.googleapis.com/network-interfaces"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Spec.Template.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
+func EncryptionKey() (string, error) {
+	annotationKey := "run.googleapis.com/encryption-key"
+	knativeService, err := KNativeService()
+	if err != nil {
+		return "", fmt.Errorf("error loading property '%s': %v", annotationKey, err)
+	}
+	annotationValue := knativeService.Spec.Template.Annotations[annotationKey]
+	if annotationValue == "" {
+		return "", fmt.Errorf("error reading property '%s'", annotationKey)
+	}
+
+	return annotationValue, nil
+}
+
 func loadKNativeService() error {
-	if Name() == "local" {
+	if ResourceType() == LocalResource {
 		return errors.New("skipping KNative endpoint, assuming local")
 	}
 
@@ -649,7 +741,7 @@ func loadKNativeService() error {
 }
 
 func metadata(path string) (string, error) {
-	if Name() == "local" {
+	if ResourceType() == LocalResource {
 		return "", errors.New("skipping GCE metadata server, assuming local")
 	}
 

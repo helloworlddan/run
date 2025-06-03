@@ -74,7 +74,7 @@ func TestServicePort(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result := run.ServicePort()
+	result := run.Port()
 	if result != "8080" {
 		t.Fatalf(`port() = %s, want "8080"`, result)
 	}
@@ -85,7 +85,7 @@ func TestServicePort(t *testing.T) {
 	}
 
 	run.ResetCache()
-	result = run.ServicePort()
+	result = run.Port()
 	if result != envVarVal {
 		t.Fatalf(`port() = %s, want %s`, result, envVarVal)
 	}
@@ -130,7 +130,7 @@ func TestServiceRevision(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result := run.ServiceRevision()
+	result := run.Revision()
 	expected := fmt.Sprintf("%s-00001-xxx", run.Name())
 	if result != expected {
 		t.Fatalf(`KNativeRevision() = %s, want %s`, result, expected)
@@ -142,7 +142,7 @@ func TestServiceRevision(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result = run.ServiceRevision()
+	result = run.Revision()
 	if result != envVarVal || err != nil {
 		t.Fatalf(`kNativeRevision() = %s, %v, want %s, error`, result, err, envVarVal)
 	}
@@ -187,7 +187,7 @@ func TestJobExecution(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result := run.JobExecution()
+	result := run.Execution()
 	if result != "local" {
 		t.Fatalf(`JobExecution() = %s, want "local"`, result)
 	}
@@ -198,7 +198,7 @@ func TestJobExecution(t *testing.T) {
 	}
 
 	run.ResetCache()
-	result = run.JobExecution()
+	result = run.Execution()
 	if result != envVarVal {
 		t.Fatalf(`JobExecution() = %s, want %s`, result, envVarVal)
 	}
@@ -215,7 +215,7 @@ func TestJobTaskIndex(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result := run.JobTaskIndex()
+	result := run.TaskIndex()
 	if result != -1 {
 		t.Fatalf(`jobTaskIndex() = %d, want -1`, result)
 	}
@@ -226,7 +226,7 @@ func TestJobTaskIndex(t *testing.T) {
 	}
 
 	run.ResetCache()
-	result = run.JobTaskIndex()
+	result = run.TaskIndex()
 	if result != envVarVal {
 		t.Fatalf(`JobTaskIndex() = %d, want %d`, result, envVarVal)
 	}
@@ -243,7 +243,7 @@ func TestJobTaskAttempt(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result := run.JobTaskAttempt()
+	result := run.TaskAttempt()
 	if result != -1 {
 		t.Fatalf(`JobTaskAttempt() = %d, want -1`, result)
 	}
@@ -254,7 +254,7 @@ func TestJobTaskAttempt(t *testing.T) {
 	}
 
 	run.ResetCache()
-	result = run.JobTaskAttempt()
+	result = run.TaskAttempt()
 	if result != envVarVal {
 		t.Fatalf(`JobTaskAttempt() = %d, want %d`, result, envVarVal)
 	}
@@ -271,7 +271,7 @@ func TestJobTaskCount(t *testing.T) {
 		t.Fatalf("unable to test: %v", err)
 	}
 
-	result := run.JobTaskCount()
+	result := run.TaskCount()
 	if result != -1 {
 		t.Fatalf(`JobTaskCount() = %d, want -1`, result)
 	}
@@ -282,7 +282,7 @@ func TestJobTaskCount(t *testing.T) {
 	}
 
 	run.ResetCache()
-	result = run.JobTaskCount()
+	result = run.TaskCount()
 	if result != envVarVal {
 		t.Fatalf(`JobTaskCount() = %d, want %d`, result, envVarVal)
 	}

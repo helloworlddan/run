@@ -43,7 +43,7 @@ func ServeGRPC(shutdown func(context.Context), server *grpc.Server) error {
 	signal.Notify(sigChan, syscall.SIGTERM, syscall.SIGINT)
 
 	go func(errChan chan<- error) {
-		listener, err := net.Listen("tcp", net.JoinHostPort("0.0.0.0", ServicePort()))
+		listener, err := net.Listen("tcp", net.JoinHostPort("0.0.0.0", Port()))
 		if err != nil {
 			log.Fatalf("failed to listen: %v", err)
 		}
@@ -52,7 +52,7 @@ func ServeGRPC(shutdown func(context.Context), server *grpc.Server) error {
 			errChan <- err
 		}
 	}(errChan)
-	Noticef(nil, "started and listening on port %s", ServicePort())
+	Noticef(nil, "started and listening on port %s", Port())
 
 	select {
 	case err := <-errChan:
@@ -91,7 +91,7 @@ func ServeHTTP(shutdown func(context.Context), server *http.Server) error {
 			w.Write([]byte("OK"))
 		})
 		server = &http.Server{
-			Addr: net.JoinHostPort("0.0.0.0", ServicePort()),
+			Addr: net.JoinHostPort("0.0.0.0", Port()),
 			// Support HTTP2
 			Handler: http2clear.NewHandler(mux, &http2.Server{}),
 		}
@@ -106,7 +106,7 @@ func ServeHTTP(shutdown func(context.Context), server *http.Server) error {
 			errChan <- err
 		}
 	}(errChan)
-	Noticef(nil, "started and listening on port %s", ServicePort())
+	Noticef(nil, "started and listening on port %s", Port())
 
 	select {
 	case err := <-errChan:
