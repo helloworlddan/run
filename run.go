@@ -762,6 +762,7 @@ func loadKNativeService() error {
 	var service knative.Service
 	err = json.Unmarshal(content, &service)
 	if err != nil {
+		Debugf(nil, "failed to unmarshal: %v", err)
 		return err
 	}
 
