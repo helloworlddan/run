@@ -373,10 +373,6 @@ func KNativeService() (knative.Service, error) {
 		return *this.knativeService, nil
 	}
 
-	if ResourceType() != ServiceResource {
-		return knative.Service{}, errors.New("resource does not appear to be a service")
-	}
-
 	err := loadKNativeService()
 	if err != nil {
 		return knative.Service{}, err
@@ -728,7 +724,7 @@ func EncryptionKey() (string, error) {
 }
 
 func loadKNativeService() error {
-	if ResourceType() == LocalResource {
+	if ResourceType() != ServiceResource {
 		return errors.New("skipping KNative endpoint, assuming local")
 	}
 
@@ -738,6 +734,9 @@ func loadKNativeService() error {
 		ProjectID(),
 		ServiceName(),
 	)
+
+	Debugf(nil, "requesting: %s", url)
+
 	request, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
@@ -752,6 +751,8 @@ func loadKNativeService() error {
 		)
 	}
 	defer resp.Body.Close()
+
+	Debugf(nil, "status: %s", resp.Status)
 
 	content, err := io.ReadAll(resp.Body)
 	if err != nil {
