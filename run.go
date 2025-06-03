@@ -238,7 +238,7 @@ func ServiceAccountEmail() string {
 // URL infers the URL with which this service will be addressable. This will
 // either be 'http://localhost:8080' or the deterministic URL provided by Cloud
 // Run
-func ServiceURL() string {
+func DefaultServiceURL() string {
 	if this.serviceURL != "" {
 		return this.serviceURL
 	}
