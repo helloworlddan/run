@@ -278,7 +278,14 @@ func ServiceAccountAccessToken() string {
 	if err != nil {
 		return "local-access-token"
 	}
-	return token
+
+	var object map[string]any
+	err = json.Unmarshal([]byte(token), &object)
+	if err != nil {
+		return "no-token-found"
+	}
+
+	return object["access_token"].(string)
 }
 
 // AddOAuth2Header injects an `Authorization` header  with a valid access token
