@@ -734,7 +734,6 @@ func loadKNativeService() error {
 		ProjectID(),
 		ServiceName(),
 	)
-
 	Debugf(nil, "requesting: %s", url)
 
 	request, err := http.NewRequest("GET", url, nil)
@@ -742,6 +741,7 @@ func loadKNativeService() error {
 		return err
 	}
 	request = AddOAuth2Header(request)
+	Debugf(nil, "authenticating request: %#v", request)
 
 	resp, err := http.DefaultClient.Do(request)
 	if err != nil {
@@ -758,6 +758,8 @@ func loadKNativeService() error {
 	if err != nil {
 		return err
 	}
+
+	Debugf(nil, "raw response: %s", string(content))
 
 	var service knative.Service
 	err = json.Unmarshal(content, &service)
